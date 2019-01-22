@@ -1,3 +1,13 @@
+# Användbara länkar
+
+## Rust
+svd2rust - https://docs.rs/svd2rust/0.14.0/svd2rust/
+Rustboken - https://doc.rust-lang.org/1.4.0/book/README.html
+Embedde rust - https://rust-embedded.github.io/book/intro/index.html
+
+## Hårdvara
+STM32F401RE datasheet - https://www.st.com/resource/en/datasheet/stm32f401re.pdf
+
 # Start by a High Level Specification
 Hälsoarband som mäter puls och steg med pulsmätare och accelerometer.
 Knapp som startar och återställer stegräknare. Stömspar som stänger display, ev efter tid av ingen puls läsning.
