@@ -6,7 +6,11 @@ Rustboken - https://doc.rust-lang.org/1.4.0/book/README.html  \
 Embedde rust - https://rust-embedded.github.io/book/intro/index.html  \
 
 ## Hårdvara
-STM32F401RE datasheet - https://www.st.com/resource/en/datasheet/stm32f401re.pdf  \
+STM32F401RE datasheet - https://www.st.com/resource/en/datasheet/stm32f401re.pdf
+
+## Dokument
+High Level specification - https://docs.google.com/document/d/1pT679ALJbP6M4RAu0LiHIDUVMe5iSUqeqp4-EVYOUyA/edit# \
+Komponenter - https://docs.google.com/spreadsheets/d/1eK-V_FMpTHM5hmX8ijiI2q-JYo_6xdile7O38F0DbRs/edit#gid=0
 
 # Start by a High Level Specification
 Hälsoarband som mäter puls och steg med pulsmätare och accelerometer.
