@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name TO_SOT_Packages_SMD)(type KiCad)(uri /home/plissken/Documents/E7020E/libs/TO_SOT_Packages_SMD.pretty)(options "")(descr ""))
+  (lib (name Connector_USB)(type KiCad)(uri /home/plissken/Documents/E7020E/libs/kicad-footprints/Connector_USB.pretty)(options "")(descr ""))
+)
