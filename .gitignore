@@ -1,1 +1,5 @@
 [Tt]arget/
+
+#KiCAD
+*.bck
+*.bak
