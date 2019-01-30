@@ -349,7 +349,7 @@ U 1 1 5C48CC6E
 P 3100 3950
 F 0 "Y1" V 3054 4081 50  0000 L CNN
 F 1 "8.0MHz" V 3145 4081 50  0000 L CNN
-F 2 "Crystals:Crystal_HC49-U_Vertical" H 3100 3950 50  0001 C CNN
+F 2 "Crystals:Crystal_SMD_HC49-SD_HandSoldering" H 3100 3950 50  0001 C CNN
 F 3 "~" H 3100 3950 50  0001 C CNN
 	1    3100 3950
 	0    1    1    0   
@@ -428,7 +428,7 @@ U 1 1 5C49DCCF
 P 8600 3950
 F 0 "J2" H 8706 4328 50  0000 C CNN
 F 1 "Conn_01x06_Male" H 8706 4237 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm_SMD_Pin1Left" H 8600 3950 50  0001 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 8600 3950 50  0001 C CNN
 F 3 "~" H 8600 3950 50  0001 C CNN
 	1    8600 3950
 	1    0    0    -1  
