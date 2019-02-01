@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 1 1
+Sheet 1 2
 Title ""
 Date ""
 Rev ""
@@ -859,4 +859,10 @@ Text Label 5600 3800 0    50   ~ 0
 XTAL+
 Text Label 5600 4200 0    50   ~ 0
 XTAL-
+$Sheet
+S 9650 1250 1300 750 
+U 5C556F23
+F0 "accelerometer" 50
+F1 "accelerometer.sch" 50
+$EndSheet
 $EndSCHEMATC
