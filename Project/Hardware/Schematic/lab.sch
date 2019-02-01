@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 1 2
+Sheet 1 6
 Title ""
 Date ""
 Rev ""
@@ -864,5 +864,35 @@ S 9650 1250 1300 750
 U 5C556F23
 F0 "accelerometer" 50
 F1 "accelerometer.sch" 50
+$EndSheet
+$Sheet
+S 9700 2600 1200 950 
+U 5C564E6B
+F0 "Pulse sensor" 50
+F1 "pulsesensor.sch" 50
+$EndSheet
+$Sheet
+S 9700 3900 1100 900 
+U 5C564F10
+F0 "Temp Sensor" 50
+F1 "tempsensor.sch" 50
+$EndSheet
+$Sheet
+S 9700 5350 950  850 
+U 5C564F2E
+F0 "Display" 50
+F1 "display.sch" 50
+$EndSheet
+$Sheet
+S 1100 6650 1200 650 
+U 5C564F82
+F0 "Piezo" 50
+F1 "piezo.sch" 50
+$EndSheet
+$Sheet
+S 2900 6700 1050 650 
+U 5C564FA0
+F0 "Buttons" 50
+F1 "buttons.sch" 50
 $EndSheet
 $EndSCHEMATC
