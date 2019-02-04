@@ -1,5 +1,4 @@
 (sym_lib_table
-  (lib (name e7020e)(type Legacy)(uri "C:/Users/asve/Desktop/Inbyggda System/Lab 1/lab1/e7020e.lib")(options "")(descr ""))
   (lib (name lab-rescue)(type Legacy)(uri ${KIPRJMOD}/lab-rescue.lib)(options "")(descr ""))
-  (lib (name PASC)(type Legacy)(uri "D:/Desktop/Inbyggda System/git/pasc/Project/Hardware/Schematic/PASC.lib")(options "")(descr ""))
+  (lib (name PASC)(type Legacy)(uri ${KIPRJMOD}/PASC.lib)(options "")(descr ""))
 )
