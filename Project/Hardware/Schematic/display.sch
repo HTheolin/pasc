@@ -2,9 +2,9 @@ EESchema Schematic File Version 4
 LIBS:lab-cache
 EELAYER 26 0
 EELAYER END
-$Descr A4 11693 8268
+$Descr User 5906 5906
 encoding utf-8
-Sheet 1 7
+Sheet 5 7
 Title ""
 Date ""
 Rev ""
@@ -14,4 +14,126 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L PASC:DEM16228SBH-PW-N LCD?
+U 1 1 5C58DC7E
+P 3600 2200
+F 0 "LCD?" H 3927 2246 50  0000 L CNN
+F 1 "DEM16228SBH-PW-N" H 3927 2155 50  0000 L CNN
+F 2 "" H 4000 2500 50  0001 C CNN
+F 3 "" H 4000 2500 50  0001 C CNN
+	1    3600 2200
+	1    0    0    -1  
+$EndComp
+Text Label 3200 2900 2    50   ~ 0
+LCD_DB7
+Text Label 3200 2800 2    50   ~ 0
+LCD_DB6
+Text Label 3200 2700 2    50   ~ 0
+LCD_DB5
+Text Label 3200 2600 2    50   ~ 0
+LCD_DB4
+Text Label 3200 2500 2    50   ~ 0
+LCD_DB3
+Text Label 3200 2400 2    50   ~ 0
+LCD_DB2
+Text Label 3200 2300 2    50   ~ 0
+LCD_DB1
+Text Label 3200 2200 2    50   ~ 0
+LCD_DB0
+Text Label 3200 2100 2    50   ~ 0
+LCD_E
+Text Label 3200 2000 2    50   ~ 0
+LCD_RW
+Text Label 3200 1900 2    50   ~ 0
+LCD_RS
+Text Label 3200 1800 2    50   ~ 0
+LCD_CONTRAST
+$Comp
+L power:+5V #PWR?
+U 1 1 5C58DDEB
+P 1800 1500
+F 0 "#PWR?" H 1800 1350 50  0001 C CNN
+F 1 "+5V" H 1815 1673 50  0000 C CNN
+F 2 "" H 1800 1500 50  0001 C CNN
+F 3 "" H 1800 1500 50  0001 C CNN
+	1    1800 1500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5C58DE2B
+P 1800 2100
+F 0 "#PWR?" H 1800 1850 50  0001 C CNN
+F 1 "GND" H 1805 1927 50  0000 C CNN
+F 2 "" H 1800 2100 50  0001 C CNN
+F 3 "" H 1800 2100 50  0001 C CNN
+	1    1800 2100
+	1    0    0    -1  
+$EndComp
+Text Label 3200 1700 2    50   ~ 0
+LCD_VDD
+Text Label 3200 1600 2    50   ~ 0
+LCD_VSS
+Text Label 3200 1500 2    50   ~ 0
+LCD_VLED
+$Comp
+L Device:C C?
+U 1 1 5C58DF2A
+P 1800 1800
+F 0 "C?" H 1915 1846 50  0000 L CNN
+F 1 "2.2u" H 1915 1755 50  0000 L CNN
+F 2 "" H 1838 1650 50  0001 C CNN
+F 3 "~" H 1800 1800 50  0001 C CNN
+	1    1800 1800
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1800 1650 1800 1600
+Wire Wire Line
+	1800 1950 1800 2000
+Wire Wire Line
+	1800 1600 2000 1600
+Connection ~ 1800 1600
+Wire Wire Line
+	1800 1600 1800 1500
+Wire Wire Line
+	1800 2000 2000 2000
+Connection ~ 1800 2000
+Wire Wire Line
+	1800 2000 1800 2100
+Text Label 2000 1600 0    50   ~ 0
+LCD_VDD
+Text Label 2000 2000 0    50   ~ 0
+LCD_VSS
+$Comp
+L Transistor_FET:BSS138 Q?
+U 1 1 5C58DFD0
+P 1700 3000
+F 0 "Q?" H 1905 3046 50  0000 L CNN
+F 1 "BSS138" H 1905 2955 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 1900 2925 50  0001 L CIN
+F 3 "https://www.fairchildsemi.com/datasheets/BS/BSS138.pdf" H 1700 3000 50  0001 L CNN
+	1    1700 3000
+	1    0    0    -1  
+$EndComp
+Text Label 1500 3000 2    50   ~ 0
+LCD_BACKLIGHT
+$Comp
+L power:GND #PWR?
+U 1 1 5C58E03F
+P 1800 3300
+F 0 "#PWR?" H 1800 3050 50  0001 C CNN
+F 1 "GND" H 1805 3127 50  0000 C CNN
+F 2 "" H 1800 3300 50  0001 C CNN
+F 3 "" H 1800 3300 50  0001 C CNN
+	1    1800 3300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1800 2800 1800 2700
+Text Label 1800 2700 0    50   ~ 0
+LCD_VLED
+Wire Wire Line
+	1800 3200 1800 3300
 $EndSCHEMATC
