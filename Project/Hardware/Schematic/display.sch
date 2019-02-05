@@ -15,41 +15,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L PASC:DEM16228SBH-PW-N LCD?
-U 1 1 5C58DC7E
-P 3600 2200
-F 0 "LCD?" H 3927 2246 50  0000 L CNN
-F 1 "DEM16228SBH-PW-N" H 3927 2155 50  0000 L CNN
-F 2 "" H 4000 2500 50  0001 C CNN
-F 3 "" H 4000 2500 50  0001 C CNN
-	1    3600 2200
-	1    0    0    -1  
-$EndComp
-Text Label 3200 2900 2    50   ~ 0
-LCD_DB7
-Text Label 3200 2800 2    50   ~ 0
-LCD_DB6
-Text Label 3200 2700 2    50   ~ 0
-LCD_DB5
-Text Label 3200 2600 2    50   ~ 0
-LCD_DB4
-Text Label 3200 2500 2    50   ~ 0
-LCD_DB3
-Text Label 3200 2400 2    50   ~ 0
-LCD_DB2
-Text Label 3200 2300 2    50   ~ 0
-LCD_DB1
-Text Label 3200 2200 2    50   ~ 0
-LCD_DB0
-Text Label 3200 2100 2    50   ~ 0
-LCD_E
-Text Label 3200 2000 2    50   ~ 0
-LCD_RW
-Text Label 3200 1900 2    50   ~ 0
-LCD_RS
-Text Label 3200 1800 2    50   ~ 0
-LCD_CONTRAST
-$Comp
 L power:+5V #PWR?
 U 1 1 5C58DDEB
 P 1800 1500
@@ -71,12 +36,6 @@ F 3 "" H 1800 2100 50  0001 C CNN
 	1    1800 2100
 	1    0    0    -1  
 $EndComp
-Text Label 3200 1700 2    50   ~ 0
-LCD_VDD
-Text Label 3200 1600 2    50   ~ 0
-LCD_VSS
-Text Label 3200 1500 2    50   ~ 0
-LCD_VLED
 $Comp
 L Device:C C?
 U 1 1 5C58DF2A
@@ -151,4 +110,122 @@ Wire Wire Line
 	1800 3000 1750 3000
 Wire Wire Line
 	1450 3000 1400 3000
+$Comp
+L Connector:Conn_01x16_Male J?
+U 1 1 5C69769F
+P 3200 2250
+F 0 "J?" H 3306 3128 50  0000 C CNN
+F 1 "Conn_01x16_Male" H 3306 3037 50  0000 C CNN
+F 2 "" H 3200 2250 50  0001 C CNN
+F 3 "~" H 3200 2250 50  0001 C CNN
+	1    3200 2250
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	3000 2950 2600 2950
+Text Label 2600 2950 0    50   ~ 0
+LCD_VSS
+Wire Wire Line
+	3000 2850 2600 2850
+Text Label 2600 2850 0    50   ~ 0
+LCD_VDD
+Wire Wire Line
+	3000 2750 2600 2750
+Text Label 2600 2750 0    50   ~ 0
+V0
+Wire Wire Line
+	3000 2650 2600 2650
+Text Label 2600 2650 0    50   ~ 0
+LCD_RS
+Wire Wire Line
+	3000 2550 2600 2550
+Text Label 2600 2550 0    50   ~ 0
+LCS_RW
+Wire Wire Line
+	3000 2450 2600 2450
+Text Label 2600 2450 0    50   ~ 0
+LCD_E
+Wire Wire Line
+	3000 2350 2600 2350
+Text Label 2600 2350 0    50   ~ 0
+LCD_DB0
+Wire Wire Line
+	3000 2250 2600 2250
+Text Label 2600 2250 0    50   ~ 0
+LCD_DB1
+Wire Wire Line
+	3000 2150 2600 2150
+Text Label 2600 2150 0    50   ~ 0
+LCD_DB2
+Wire Wire Line
+	3000 2050 2600 2050
+Text Label 2600 2050 0    50   ~ 0
+LCD_DB3
+Wire Wire Line
+	3000 1950 2600 1950
+Text Label 2600 1950 0    50   ~ 0
+LCD_DB4
+Wire Wire Line
+	3000 1850 2600 1850
+Text Label 2600 1850 0    50   ~ 0
+LCD_DB5
+Wire Wire Line
+	3000 1750 2600 1750
+Text Label 2600 1750 0    50   ~ 0
+LCD_DB6
+Wire Wire Line
+	3000 1650 2600 1650
+Text Label 2600 1650 0    50   ~ 0
+LCD_DB7
+Wire Wire Line
+	3000 1550 2600 1550
+Wire Wire Line
+	3000 1450 2600 1450
+Text Label 2600 1550 0    50   ~ 0
+LCD_VLED+
+Text Label 2600 1450 0    50   ~ 0
+LCD_VLED-
+$Comp
+L PASC:DEM16220SYM U?
+U 1 1 5C69A8D5
+P 4500 2000
+F 0 "U?" H 4827 1946 50  0000 L CNN
+F 1 "DEM16220SYM" H 4827 1855 50  0000 L CNN
+F 2 "" H 4500 2000 50  0001 C CNN
+F 3 "" H 4500 2000 50  0001 C CNN
+	1    4500 2000
+	1    0    0    -1  
+$EndComp
+Text Label 4100 1350 2    50   ~ 0
+LCD_VSS
+Text Label 4100 1450 2    50   ~ 0
+LCS_VDD
+Text Label 4100 1550 2    50   ~ 0
+LCD_CONTRAST
+Text Label 4100 1650 2    50   ~ 0
+LCD_RS
+Text Label 4100 1750 2    50   ~ 0
+LCD_RW
+Text Label 4100 1850 2    50   ~ 0
+LCD_E
+Text Label 4100 1950 2    50   ~ 0
+LCD_DB0
+Text Label 4100 2050 2    50   ~ 0
+LCD_DB1
+Text Label 4100 2150 2    50   ~ 0
+LCD_DB2
+Text Label 4100 2250 2    50   ~ 0
+LCD_DB3
+Text Label 4100 2350 2    50   ~ 0
+LCD_DB4
+Text Label 4100 2450 2    50   ~ 0
+LCD_DB5
+Text Label 4100 2550 2    50   ~ 0
+LCD_DB6
+Text Label 4100 2650 2    50   ~ 0
+LCD_DB7
+Text Label 4100 2800 2    50   ~ 0
+LCD_VLED+
+Text Label 4100 2900 2    50   ~ 0
+LCD_VLED-
 $EndSCHEMATC
