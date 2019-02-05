@@ -39,7 +39,7 @@ F 3 "" H 7350 3350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6700 3150 6200 3150
+	6700 3150 6400 3150
 $Comp
 L power:GND #PWR?
 U 1 1 5C59F3FC
@@ -85,4 +85,33 @@ Wire Wire Line
 	8000 3450 8500 3450
 Text Label 8500 3450 0    50   ~ 0
 CS_XL
+$Comp
+L Device:C C?
+U 1 1 5C5A61DB
+P 6400 3400
+F 0 "C?" H 6515 3446 50  0000 L CNN
+F 1 "C" H 6515 3355 50  0000 L CNN
+F 2 "" H 6438 3250 50  0001 C CNN
+F 3 "~" H 6400 3400 50  0001 C CNN
+	1    6400 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5C5A62A1
+P 6400 3850
+F 0 "#PWR?" H 6400 3600 50  0001 C CNN
+F 1 "GND" H 6405 3677 50  0000 C CNN
+F 2 "" H 6400 3850 50  0001 C CNN
+F 3 "" H 6400 3850 50  0001 C CNN
+	1    6400 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6400 3150 6400 3250
+Connection ~ 6400 3150
+Wire Wire Line
+	6400 3150 6200 3150
+Wire Wire Line
+	6400 3550 6400 3850
 $EndSCHEMATC
