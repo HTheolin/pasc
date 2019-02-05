@@ -573,22 +573,10 @@ NoConn ~ 7500 5500
 NoConn ~ 7500 5600
 NoConn ~ 7500 5700
 NoConn ~ 7500 5800
-NoConn ~ 6100 5800
-NoConn ~ 6100 5700
-NoConn ~ 6100 5600
-NoConn ~ 6100 5500
-NoConn ~ 6100 5400
-NoConn ~ 6100 5300
 NoConn ~ 6100 5200
 NoConn ~ 6100 5100
 NoConn ~ 6100 5000
 NoConn ~ 6100 4900
-NoConn ~ 6100 4800
-NoConn ~ 6100 4700
-NoConn ~ 6100 4600
-NoConn ~ 6100 4500
-NoConn ~ 6100 4400
-NoConn ~ 6100 4300
 NoConn ~ 6100 4100
 $Comp
 L Device:C_Small C17
@@ -922,4 +910,75 @@ Wire Wire Line
 	7500 3200 7900 3200
 Text Label 7900 3200 0    50   ~ 0
 TIM2_CH1
+$Comp
+L Connector:Conn_01x03_Male J?
+U 1 1 5C5B0DFA
+P 2800 5200
+F 0 "J?" H 2906 5478 50  0000 C CNN
+F 1 "Conn_01x03_Male" H 2906 5387 50  0000 C CNN
+F 2 "" H 2800 5200 50  0001 C CNN
+F 3 "~" H 2800 5200 50  0001 C CNN
+	1    2800 5200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3000 5100 3350 5100
+Text Label 3350 5100 0    50   ~ 0
+USART1_CK
+Wire Wire Line
+	3000 5200 3350 5200
+Text Label 3350 5200 0    50   ~ 0
+USART1_TX
+Wire Wire Line
+	3000 5300 3350 5300
+Text Label 3350 5300 0    50   ~ 0
+USART_RX
+Text Label 5700 4300 0    50   ~ 0
+LCD_DB0
+Text Label 5700 4400 0    50   ~ 0
+LCD_DB1
+Text Label 5700 4500 0    50   ~ 0
+LCD_DB2
+Wire Wire Line
+	5700 4300 6100 4300
+Wire Wire Line
+	5700 4400 6100 4400
+Wire Wire Line
+	5700 4500 6100 4500
+Wire Wire Line
+	6100 4600 5700 4600
+Text Label 5700 4600 0    50   ~ 0
+LCD_DB3
+Wire Wire Line
+	6100 4700 5700 4700
+Text Label 5700 4700 0    50   ~ 0
+LCD_DB4
+Wire Wire Line
+	6100 4800 5700 4800
+Text Label 5700 4800 0    50   ~ 0
+LCD_DB5
+Text Label 5700 5300 0    50   ~ 0
+LCD_DB6
+Text Label 5700 5400 0    50   ~ 0
+LCD_DB7
+Text Label 5700 5500 0    50   ~ 0
+LCD_DB8
+Wire Wire Line
+	5700 5300 6100 5300
+Wire Wire Line
+	5700 5400 6100 5400
+Wire Wire Line
+	5700 5500 6100 5500
+Wire Wire Line
+	6100 5600 5700 5600
+Text Label 5700 5600 0    50   ~ 0
+LCD_RS
+Wire Wire Line
+	6100 5700 5700 5700
+Text Label 5700 5700 0    50   ~ 0
+LSC_RW
+Wire Wire Line
+	6100 5800 5700 5800
+Text Label 5700 5800 0    50   ~ 0
+LCD_E
 $EndSCHEMATC
