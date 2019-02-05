@@ -751,17 +751,12 @@ $EndComp
 Wire Wire Line
 	4700 1100 4700 900 
 Connection ~ 4700 1100
-NoConn ~ 7500 2700
 NoConn ~ 7500 2800
 NoConn ~ 7500 2900
 NoConn ~ 7500 3000
 NoConn ~ 7500 3100
-NoConn ~ 7500 3200
 NoConn ~ 7500 3300
 NoConn ~ 7500 3400
-NoConn ~ 7500 3500
-NoConn ~ 7500 3600
-NoConn ~ 7500 3700
 NoConn ~ 7500 3800
 NoConn ~ 7500 3900
 NoConn ~ 7500 4200
@@ -770,15 +765,6 @@ NoConn ~ 7500 4600
 NoConn ~ 7500 4500
 NoConn ~ 7500 4800
 NoConn ~ 7500 4900
-NoConn ~ 7500 5000
-NoConn ~ 7500 5100
-NoConn ~ 7500 5200
-NoConn ~ 7500 5300
-NoConn ~ 7500 5400
-NoConn ~ 7500 5500
-NoConn ~ 7500 5600
-NoConn ~ 7500 5700
-NoConn ~ 7500 5800
 NoConn ~ 6100 5800
 NoConn ~ 6100 5700
 NoConn ~ 6100 5600
@@ -895,4 +881,95 @@ U 5C564FA0
 F0 "Buttons" 50
 F1 "buttons.sch" 50
 $EndSheet
+Wire Wire Line
+	7500 3600 7900 3600
+Wire Wire Line
+	7500 3700 7900 3700
+Wire Wire Line
+	7500 5000 7900 5000
+Text Label 7900 5000 0    50   ~ 0
+I2C1_SCL
+Wire Wire Line
+	7500 5100 7900 5100
+Text Label 7900 5100 0    50   ~ 0
+I2C1_SDA
+Text Label 7900 3600 0    50   ~ 0
+USART1_TX
+Text Label 7900 3700 0    50   ~ 0
+USART1_RX
+Wire Wire Line
+	7500 5400 7900 5400
+Text Label 7900 5400 0    50   ~ 0
+CS_XL
+Wire Wire Line
+	7500 5500 7900 5500
+Text Label 7900 5500 0    50   ~ 0
+CS_INT
+Wire Wire Line
+	1500 3650 1700 3650
+Wire Wire Line
+	1500 3500 1500 3650
+Wire Wire Line
+	1700 3650 1700 3800
+Connection ~ 1500 3650
+Wire Wire Line
+	1300 3650 1500 3650
+Wire Wire Line
+	1300 3800 1300 3650
+$Comp
+L power:+3.3V #PWR0118
+U 1 1 5C61B2DB
+P 1500 3500
+F 0 "#PWR0118" H 1500 3350 50  0001 C CNN
+F 1 "+3.3V" H 1515 3673 50  0000 C CNN
+F 2 "" H 1500 3500 50  0001 C CNN
+F 3 "" H 1500 3500 50  0001 C CNN
+	1    1500 3500
+	1    0    0    -1  
+$EndComp
+Text Label 1300 4450 0    50   ~ 0
+I2C1_SCL
+Text Label 1700 4450 0    50   ~ 0
+I2C1_SDA
+Wire Wire Line
+	1700 4100 1700 4450
+Wire Wire Line
+	1300 4100 1300 4450
+$Comp
+L Device:R R?
+U 1 1 5C5EC7D0
+P 1700 3950
+F 0 "R?" H 1770 3996 50  0000 L CNN
+F 1 "4.7k" H 1770 3905 50  0000 L CNN
+F 2 "" V 1630 3950 50  0001 C CNN
+F 3 "~" H 1700 3950 50  0001 C CNN
+	1    1700 3950
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5C5EC772
+P 1300 3950
+F 0 "R?" H 1370 3996 50  0000 L CNN
+F 1 "4.7k" H 1370 3905 50  0000 L CNN
+F 2 "" V 1230 3950 50  0001 C CNN
+F 3 "~" H 1300 3950 50  0001 C CNN
+	1    1300 3950
+	1    0    0    -1  
+$EndComp
+NoConn ~ 7500 5600
+NoConn ~ 7500 5700
+NoConn ~ 7500 5800
+Wire Wire Line
+	7500 3500 7900 3500
+Text Label 7900 3500 0    50   ~ 0
+USART1_CK
+Wire Wire Line
+	7500 2700 7900 2700
+Text Label 7900 2700 0    50   ~ 0
+ADC1_IN0
+Wire Wire Line
+	7500 3200 7900 3200
+Text Label 7900 3200 0    50   ~ 0
+TIM2_CH1
 $EndSCHEMATC
