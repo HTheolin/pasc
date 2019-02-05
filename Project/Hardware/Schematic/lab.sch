@@ -554,17 +554,12 @@ $EndComp
 Wire Wire Line
 	4200 1100 4200 900 
 Connection ~ 4200 1100
-NoConn ~ 7500 2700
 NoConn ~ 7500 2800
 NoConn ~ 7500 2900
 NoConn ~ 7500 3000
 NoConn ~ 7500 3100
-NoConn ~ 7500 3200
 NoConn ~ 7500 3300
 NoConn ~ 7500 3400
-NoConn ~ 7500 3500
-NoConn ~ 7500 3600
-NoConn ~ 7500 3700
 NoConn ~ 7500 3800
 NoConn ~ 7500 3900
 NoConn ~ 7500 4200
@@ -574,10 +569,6 @@ NoConn ~ 7500 4500
 NoConn ~ 7500 4800
 NoConn ~ 7500 4900
 NoConn ~ 7500 5000
-NoConn ~ 7500 5100
-NoConn ~ 7500 5200
-NoConn ~ 7500 5300
-NoConn ~ 7500 5400
 NoConn ~ 7500 5500
 NoConn ~ 7500 5600
 NoConn ~ 7500 5700
@@ -895,4 +886,40 @@ Wire Wire Line
 	1200 900  1200 1100
 Wire Wire Line
 	1200 1500 1200 1700
+Wire Wire Line
+	7500 3500 7900 3500
+Text Label 7900 3500 0    50   ~ 0
+USART1_CK
+Wire Wire Line
+	7500 3600 7900 3600
+Text Label 7900 3600 0    50   ~ 0
+USART1_TX
+Wire Wire Line
+	7500 3700 7900 3700
+Text Label 7900 3700 0    50   ~ 0
+USART1_RX
+Wire Wire Line
+	7500 5100 7900 5100
+Text Label 7900 5100 0    50   ~ 0
+I2C1_SDA
+Wire Wire Line
+	7500 5200 7900 5200
+Text Label 7900 5200 0    50   ~ 0
+I2C1_SCL
+Wire Wire Line
+	7500 5300 7900 5300
+Text Label 7900 5300 0    50   ~ 0
+CS_XL
+Wire Wire Line
+	7500 5400 7900 5400
+Text Label 7900 5400 0    50   ~ 0
+CS_INT
+Wire Wire Line
+	7500 2700 7900 2700
+Text Label 7900 2700 0    50   ~ 0
+TEMPOUT
+Wire Wire Line
+	7500 3200 7900 3200
+Text Label 7900 3200 0    50   ~ 0
+TIM2_CH1
 $EndSCHEMATC
