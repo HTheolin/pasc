@@ -17,215 +17,169 @@ $EndDescr
 $Comp
 L power:+5V #PWR?
 U 1 1 5C58DDEB
-P 1800 1500
-F 0 "#PWR?" H 1800 1350 50  0001 C CNN
-F 1 "+5V" H 1815 1673 50  0000 C CNN
-F 2 "" H 1800 1500 50  0001 C CNN
-F 3 "" H 1800 1500 50  0001 C CNN
-	1    1800 1500
+P 1750 950
+F 0 "#PWR?" H 1750 800 50  0001 C CNN
+F 1 "+5V" H 1765 1123 50  0000 C CNN
+F 2 "" H 1750 950 50  0001 C CNN
+F 3 "" H 1750 950 50  0001 C CNN
+	1    1750 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR?
 U 1 1 5C58DE2B
-P 1800 2100
-F 0 "#PWR?" H 1800 1850 50  0001 C CNN
-F 1 "GND" H 1805 1927 50  0000 C CNN
-F 2 "" H 1800 2100 50  0001 C CNN
-F 3 "" H 1800 2100 50  0001 C CNN
-	1    1800 2100
+P 1750 1550
+F 0 "#PWR?" H 1750 1300 50  0001 C CNN
+F 1 "GND" H 1755 1377 50  0000 C CNN
+F 2 "" H 1750 1550 50  0001 C CNN
+F 3 "" H 1750 1550 50  0001 C CNN
+	1    1750 1550
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:C C?
 U 1 1 5C58DF2A
-P 1800 1800
-F 0 "C?" H 1915 1846 50  0000 L CNN
-F 1 "2.2u" H 1915 1755 50  0000 L CNN
-F 2 "" H 1838 1650 50  0001 C CNN
-F 3 "~" H 1800 1800 50  0001 C CNN
-	1    1800 1800
+P 1750 1250
+F 0 "C?" H 1865 1296 50  0000 L CNN
+F 1 "2.2u" H 1865 1205 50  0000 L CNN
+F 2 "" H 1788 1100 50  0001 C CNN
+F 3 "~" H 1750 1250 50  0001 C CNN
+	1    1750 1250
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1800 1650 1800 1600
+	1750 1100 1750 1050
 Wire Wire Line
-	1800 1950 1800 2000
+	1750 1400 1750 1450
 Wire Wire Line
-	1800 1600 2000 1600
-Connection ~ 1800 1600
+	1750 1050 1950 1050
+Connection ~ 1750 1050
 Wire Wire Line
-	1800 1600 1800 1500
+	1750 1050 1750 950 
 Wire Wire Line
-	1800 2000 2000 2000
-Connection ~ 1800 2000
+	1750 1450 1950 1450
+Connection ~ 1750 1450
 Wire Wire Line
-	1800 2000 1800 2100
-Text Label 2000 1600 0    50   ~ 0
+	1750 1450 1750 1550
+Text Label 1950 1050 0    50   ~ 0
 LCD_VDD
-Text Label 2000 2000 0    50   ~ 0
+Text Label 1950 1450 0    50   ~ 0
 LCD_VSS
 $Comp
 L Transistor_FET:BSS138 Q?
 U 1 1 5C58DFD0
-P 2000 3000
-F 0 "Q?" H 2205 3046 50  0000 L CNN
-F 1 "BSS138" H 2205 2955 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23" H 2200 2925 50  0001 L CIN
-F 3 "https://www.fairchildsemi.com/datasheets/BS/BSS138.pdf" H 2000 3000 50  0001 L CNN
-	1    2000 3000
+P 1800 2750
+F 0 "Q?" H 2005 2796 50  0000 L CNN
+F 1 "BSS138" H 2005 2705 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 2000 2675 50  0001 L CIN
+F 3 "https://www.fairchildsemi.com/datasheets/BS/BSS138.pdf" H 1800 2750 50  0001 L CNN
+	1    1800 2750
 	1    0    0    -1  
 $EndComp
-Text Label 1400 3000 2    50   ~ 0
+Text Label 1200 2750 2    50   ~ 0
 LCD_BACKLIGHT
-$Comp
-L power:GND #PWR?
-U 1 1 5C58E03F
-P 2100 3300
-F 0 "#PWR?" H 2100 3050 50  0001 C CNN
-F 1 "GND" H 2105 3127 50  0000 C CNN
-F 2 "" H 2100 3300 50  0001 C CNN
-F 3 "" H 2100 3300 50  0001 C CNN
-	1    2100 3300
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
-	2100 2800 2100 2700
-Text Label 2100 2700 0    50   ~ 0
-LCD_VLED
+	1900 2550 1900 2450
 Wire Wire Line
-	2100 3200 2100 3300
+	1900 2950 1900 3050
 $Comp
 L Device:R R?
 U 1 1 5C58E912
-P 1600 3000
-F 0 "R?" V 1500 3000 50  0000 C CNN
-F 1 "100" V 1700 3000 50  0000 C CNN
-F 2 "" V 1530 3000 50  0001 C CNN
-F 3 "~" H 1600 3000 50  0001 C CNN
-	1    1600 3000
+P 1400 2750
+F 0 "R?" V 1300 2750 50  0000 C CNN
+F 1 "100" V 1500 2750 50  0000 C CNN
+F 2 "" V 1330 2750 50  0001 C CNN
+F 3 "~" H 1400 2750 50  0001 C CNN
+	1    1400 2750
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	1800 3000 1750 3000
+	1600 2750 1550 2750
 Wire Wire Line
-	1450 3000 1400 3000
-$Comp
-L Connector:Conn_01x16_Male J?
-U 1 1 5C69769F
-P 3200 2250
-F 0 "J?" H 3306 3128 50  0000 C CNN
-F 1 "Conn_01x16_Male" H 3306 3037 50  0000 C CNN
-F 2 "" H 3200 2250 50  0001 C CNN
-F 3 "~" H 3200 2250 50  0001 C CNN
-	1    3200 2250
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	3000 2950 2600 2950
-Text Label 2600 2950 0    50   ~ 0
-LCD_VSS
-Wire Wire Line
-	3000 2850 2600 2850
-Text Label 2600 2850 0    50   ~ 0
-LCD_VDD
-Wire Wire Line
-	3000 2750 2600 2750
-Text Label 2600 2750 0    50   ~ 0
-V0
-Wire Wire Line
-	3000 2650 2600 2650
-Text Label 2600 2650 0    50   ~ 0
-LCD_RS
-Wire Wire Line
-	3000 2550 2600 2550
-Text Label 2600 2550 0    50   ~ 0
-LCS_RW
-Wire Wire Line
-	3000 2450 2600 2450
-Text Label 2600 2450 0    50   ~ 0
-LCD_E
-Wire Wire Line
-	3000 2350 2600 2350
-Text Label 2600 2350 0    50   ~ 0
-LCD_DB0
-Wire Wire Line
-	3000 2250 2600 2250
-Text Label 2600 2250 0    50   ~ 0
-LCD_DB1
-Wire Wire Line
-	3000 2150 2600 2150
-Text Label 2600 2150 0    50   ~ 0
-LCD_DB2
-Wire Wire Line
-	3000 2050 2600 2050
-Text Label 2600 2050 0    50   ~ 0
-LCD_DB3
-Wire Wire Line
-	3000 1950 2600 1950
-Text Label 2600 1950 0    50   ~ 0
-LCD_DB4
-Wire Wire Line
-	3000 1850 2600 1850
-Text Label 2600 1850 0    50   ~ 0
-LCD_DB5
-Wire Wire Line
-	3000 1750 2600 1750
-Text Label 2600 1750 0    50   ~ 0
-LCD_DB6
-Wire Wire Line
-	3000 1650 2600 1650
-Text Label 2600 1650 0    50   ~ 0
-LCD_DB7
-Wire Wire Line
-	3000 1550 2600 1550
-Wire Wire Line
-	3000 1450 2600 1450
-Text Label 2600 1550 0    50   ~ 0
-LCD_VLED+
-Text Label 2600 1450 0    50   ~ 0
-LCD_VLED-
+	1250 2750 1200 2750
 $Comp
 L PASC:DEM16220SYM U?
 U 1 1 5C69A8D5
-P 4500 2000
-F 0 "U?" H 4827 1946 50  0000 L CNN
-F 1 "DEM16220SYM" H 4827 1855 50  0000 L CNN
-F 2 "" H 4500 2000 50  0001 C CNN
-F 3 "" H 4500 2000 50  0001 C CNN
-	1    4500 2000
+P 4500 1900
+F 0 "U?" H 4200 700 50  0000 L CNN
+F 1 "DEM16220SYM" H 4200 800 50  0000 L CNN
+F 2 "" H 4500 1900 50  0001 C CNN
+F 3 "" H 4500 1900 50  0001 C CNN
+	1    4500 1900
 	1    0    0    -1  
 $EndComp
-Text Label 4100 1350 2    50   ~ 0
+Text Label 4100 1250 2    50   ~ 0
 LCD_VSS
-Text Label 4100 1450 2    50   ~ 0
+Text Label 4100 1350 2    50   ~ 0
 LCS_VDD
 Text Label 4100 1550 2    50   ~ 0
-LCD_CONTRAST
-Text Label 4100 1650 2    50   ~ 0
 LCD_RS
-Text Label 4100 1750 2    50   ~ 0
+Text Label 4100 1650 2    50   ~ 0
 LCD_RW
-Text Label 4100 1850 2    50   ~ 0
+Text Label 4100 1750 2    50   ~ 0
 LCD_E
-Text Label 4100 1950 2    50   ~ 0
+Text Label 4100 1850 2    50   ~ 0
 LCD_DB0
-Text Label 4100 2050 2    50   ~ 0
+Text Label 4100 1950 2    50   ~ 0
 LCD_DB1
-Text Label 4100 2150 2    50   ~ 0
+Text Label 4100 2050 2    50   ~ 0
 LCD_DB2
-Text Label 4100 2250 2    50   ~ 0
+Text Label 4100 2150 2    50   ~ 0
 LCD_DB3
-Text Label 4100 2350 2    50   ~ 0
+Text Label 4100 2250 2    50   ~ 0
 LCD_DB4
-Text Label 4100 2450 2    50   ~ 0
+Text Label 4100 2350 2    50   ~ 0
 LCD_DB5
-Text Label 4100 2550 2    50   ~ 0
+Text Label 4100 2450 2    50   ~ 0
 LCD_DB6
-Text Label 4100 2650 2    50   ~ 0
+Text Label 4100 2550 2    50   ~ 0
 LCD_DB7
 Text Label 4100 2800 2    50   ~ 0
 LCD_VLED+
-Text Label 4100 2900 2    50   ~ 0
+Text Label 4100 2700 2    50   ~ 0
 LCD_VLED-
+$Comp
+L power:+5V #PWR?
+U 1 1 5C5BE7E6
+P 1900 2450
+F 0 "#PWR?" H 1900 2300 50  0001 C CNN
+F 1 "+5V" H 1915 2623 50  0000 C CNN
+F 2 "" H 1900 2450 50  0001 C CNN
+F 3 "" H 1900 2450 50  0001 C CNN
+	1    1900 2450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1900 3050 2000 3050
+Text Label 2000 3050 0    50   ~ 0
+LCD_VLED+
+Text Label 2000 3250 0    50   ~ 0
+LCD_VLED-
+Wire Wire Line
+	1900 3250 2000 3250
+$Comp
+L power:GND #PWR?
+U 1 1 5C5BF407
+P 1900 3550
+F 0 "#PWR?" H 1900 3300 50  0001 C CNN
+F 1 "GND" H 1905 3377 50  0000 C CNN
+F 2 "" H 1900 3550 50  0001 C CNN
+F 3 "" H 1900 3550 50  0001 C CNN
+	1    1900 3550
+	1    0    0    -1  
+$EndComp
+Text Label 4100 1450 2    50   ~ 0
+V0
+Wire Wire Line
+	1900 3250 1900 3550
+Text Notes 3350 1000 0    50   ~ 0
+Connector to flatcable for display.
+Wire Notes Line
+	3300 900  5000 900 
+Wire Notes Line
+	5000 900  5000 3200
+Wire Notes Line
+	5000 3200 3300 3200
+Wire Notes Line
+	3300 3200 3300 900 
 $EndSCHEMATC
