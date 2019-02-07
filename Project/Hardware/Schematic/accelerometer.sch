@@ -70,7 +70,7 @@ NoConn ~ 6700 3300
 Wire Wire Line
 	8000 3100 8500 3100
 Text Label 8500 3100 0    50   ~ 0
-ISC1_SCL
+I2C1_SCL
 Wire Wire Line
 	8000 3250 8500 3250
 Text Label 8500 3250 0    50   ~ 0
