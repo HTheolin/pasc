@@ -932,7 +932,7 @@ USART1_TX
 Wire Wire Line
 	3000 5300 3350 5300
 Text Label 3350 5300 0    50   ~ 0
-USART_RX
+USART1_RX
 Text Label 5700 4300 0    50   ~ 0
 LCD_DB0
 Text Label 5700 4400 0    50   ~ 0
