@@ -83,4 +83,235 @@ F 3 "" H 3250 1700 50  0001 C CNN
 $EndComp
 Text HLabel 4350 1700 2    50   Input ~ 0
 NRST
+$Comp
+L PASC:MomentSwitch U?
+U 1 1 5C68DC82
+P 3800 3500
+F 0 "U?" H 3800 3925 50  0000 C CNN
+F 1 "MomentSwitch" H 3800 3834 50  0000 C CNN
+F 2 "PASC:Momentswitch" H 3800 3500 50  0001 C CNN
+F 3 "" H 3800 3500 50  0001 C CNN
+	1    3800 3500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4150 3300 4250 3300
+Wire Wire Line
+	4250 3700 4150 3700
+Wire Wire Line
+	3450 3300 3350 3300
+Wire Wire Line
+	3350 3700 3450 3700
+Text HLabel 4750 3500 2    50   Input ~ 0
+TIM_START
+Wire Wire Line
+	3350 3300 3350 3500
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5C68E9D0
+P 3150 3400
+F 0 "#PWR?" H 3150 3250 50  0001 C CNN
+F 1 "+3.3V" H 3165 3573 50  0000 C CNN
+F 2 "" H 3150 3400 50  0001 C CNN
+F 3 "" H 3150 3400 50  0001 C CNN
+	1    3150 3400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3150 3400 3150 3500
+Wire Wire Line
+	3150 3500 3350 3500
+Connection ~ 3350 3500
+Wire Wire Line
+	3350 3500 3350 3700
+Wire Wire Line
+	4250 3300 4250 3500
+$Comp
+L Device:R R?
+U 1 1 5C68EFD4
+P 4550 3850
+F 0 "R?" H 4620 3896 50  0000 L CNN
+F 1 "1k" H 4620 3805 50  0000 L CNN
+F 2 "" V 4480 3850 50  0001 C CNN
+F 3 "~" H 4550 3850 50  0001 C CNN
+	1    4550 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4250 3500 4550 3500
+Connection ~ 4250 3500
+Wire Wire Line
+	4250 3500 4250 3700
+$Comp
+L power:GND #PWR?
+U 1 1 5C68F32C
+P 4550 4100
+F 0 "#PWR?" H 4550 3850 50  0001 C CNN
+F 1 "GND" H 4555 3927 50  0000 C CNN
+F 2 "" H 4550 4100 50  0001 C CNN
+F 3 "" H 4550 4100 50  0001 C CNN
+	1    4550 4100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4550 4000 4550 4100
+Wire Wire Line
+	4550 3700 4550 3500
+Connection ~ 4550 3500
+Wire Wire Line
+	4550 3500 4750 3500
+$Comp
+L PASC:MomentSwitch U?
+U 1 1 5C68FABB
+P 3800 4850
+F 0 "U?" H 3800 5275 50  0000 C CNN
+F 1 "MomentSwitch" H 3800 5184 50  0000 C CNN
+F 2 "PASC:Momentswitch" H 3800 4850 50  0001 C CNN
+F 3 "" H 3800 4850 50  0001 C CNN
+	1    3800 4850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4150 4650 4250 4650
+Wire Wire Line
+	4250 5050 4150 5050
+Wire Wire Line
+	3450 4650 3350 4650
+Wire Wire Line
+	3350 5050 3450 5050
+Text HLabel 4750 4850 2    50   Input ~ 0
+TIM_INC
+Wire Wire Line
+	3350 4650 3350 4850
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5C68FAC8
+P 3150 4750
+F 0 "#PWR?" H 3150 4600 50  0001 C CNN
+F 1 "+3.3V" H 3165 4923 50  0000 C CNN
+F 2 "" H 3150 4750 50  0001 C CNN
+F 3 "" H 3150 4750 50  0001 C CNN
+	1    3150 4750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3150 4750 3150 4850
+Wire Wire Line
+	3150 4850 3350 4850
+Connection ~ 3350 4850
+Wire Wire Line
+	3350 4850 3350 5050
+Wire Wire Line
+	4250 4650 4250 4850
+$Comp
+L Device:R R?
+U 1 1 5C68FAD3
+P 4550 5200
+F 0 "R?" H 4620 5246 50  0000 L CNN
+F 1 "1k" H 4620 5155 50  0000 L CNN
+F 2 "" V 4480 5200 50  0001 C CNN
+F 3 "~" H 4550 5200 50  0001 C CNN
+	1    4550 5200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4250 4850 4550 4850
+Connection ~ 4250 4850
+Wire Wire Line
+	4250 4850 4250 5050
+$Comp
+L power:GND #PWR?
+U 1 1 5C68FADD
+P 4550 5450
+F 0 "#PWR?" H 4550 5200 50  0001 C CNN
+F 1 "GND" H 4555 5277 50  0000 C CNN
+F 2 "" H 4550 5450 50  0001 C CNN
+F 3 "" H 4550 5450 50  0001 C CNN
+	1    4550 5450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4550 5350 4550 5450
+Wire Wire Line
+	4550 5050 4550 4850
+Connection ~ 4550 4850
+Wire Wire Line
+	4550 4850 4750 4850
+$Comp
+L PASC:MomentSwitch U?
+U 1 1 5C6902F1
+P 3800 6050
+F 0 "U?" H 3800 6475 50  0000 C CNN
+F 1 "MomentSwitch" H 3800 6384 50  0000 C CNN
+F 2 "PASC:Momentswitch" H 3800 6050 50  0001 C CNN
+F 3 "" H 3800 6050 50  0001 C CNN
+	1    3800 6050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4150 5850 4250 5850
+Wire Wire Line
+	4250 6250 4150 6250
+Wire Wire Line
+	3450 5850 3350 5850
+Wire Wire Line
+	3350 6250 3450 6250
+Text HLabel 4750 6050 2    50   Input ~ 0
+TIM_RES
+Wire Wire Line
+	3350 5850 3350 6050
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5C6902FE
+P 3150 5950
+F 0 "#PWR?" H 3150 5800 50  0001 C CNN
+F 1 "+3.3V" H 3165 6123 50  0000 C CNN
+F 2 "" H 3150 5950 50  0001 C CNN
+F 3 "" H 3150 5950 50  0001 C CNN
+	1    3150 5950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3150 5950 3150 6050
+Wire Wire Line
+	3150 6050 3350 6050
+Connection ~ 3350 6050
+Wire Wire Line
+	3350 6050 3350 6250
+Wire Wire Line
+	4250 5850 4250 6050
+$Comp
+L Device:R R?
+U 1 1 5C690309
+P 4550 6400
+F 0 "R?" H 4620 6446 50  0000 L CNN
+F 1 "1k" H 4620 6355 50  0000 L CNN
+F 2 "" V 4480 6400 50  0001 C CNN
+F 3 "~" H 4550 6400 50  0001 C CNN
+	1    4550 6400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4250 6050 4550 6050
+Connection ~ 4250 6050
+Wire Wire Line
+	4250 6050 4250 6250
+$Comp
+L power:GND #PWR?
+U 1 1 5C690313
+P 4550 6650
+F 0 "#PWR?" H 4550 6400 50  0001 C CNN
+F 1 "GND" H 4555 6477 50  0000 C CNN
+F 2 "" H 4550 6650 50  0001 C CNN
+F 3 "" H 4550 6650 50  0001 C CNN
+	1    4550 6650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4550 6550 4550 6650
+Wire Wire Line
+	4550 6250 4550 6050
+Connection ~ 4550 6050
+Wire Wire Line
+	4550 6050 4750 6050
 $EndSCHEMATC
