@@ -76,8 +76,6 @@ F 3 "https://www.fairchildsemi.com/datasheets/BS/BSS138.pdf" H 1800 2750 50  000
 	1    1800 2750
 	1    0    0    -1  
 $EndComp
-Text Label 1200 2750 2    50   ~ 0
-LCD_BACKLIGHT
 Wire Wire Line
 	1900 2550 1900 2450
 Wire Wire Line
@@ -98,7 +96,7 @@ Wire Wire Line
 Wire Wire Line
 	1250 2750 1200 2750
 $Comp
-L PASC:DEM16220SYM U?
+L lab-rescue:DEM16220SYM-PASC U?
 U 1 1 5C69A8D5
 P 4500 1900
 F 0 "U?" H 4200 700 50  0000 L CNN
@@ -112,28 +110,6 @@ Text Label 4100 1250 2    50   ~ 0
 LCD_VSS
 Text Label 4100 1350 2    50   ~ 0
 LCS_VDD
-Text Label 4100 1550 2    50   ~ 0
-LCD_RS
-Text Label 4100 1650 2    50   ~ 0
-LCD_RW
-Text Label 4100 1750 2    50   ~ 0
-LCD_E
-Text Label 4100 1850 2    50   ~ 0
-LCD_DB0
-Text Label 4100 1950 2    50   ~ 0
-LCD_DB1
-Text Label 4100 2050 2    50   ~ 0
-LCD_DB2
-Text Label 4100 2150 2    50   ~ 0
-LCD_DB3
-Text Label 4100 2250 2    50   ~ 0
-LCD_DB4
-Text Label 4100 2350 2    50   ~ 0
-LCD_DB5
-Text Label 4100 2450 2    50   ~ 0
-LCD_DB6
-Text Label 4100 2550 2    50   ~ 0
-LCD_DB7
 Text Label 4100 2800 2    50   ~ 0
 LCD_VLED+
 Text Label 4100 2700 2    50   ~ 0
@@ -182,4 +158,28 @@ Wire Notes Line
 	5000 3200 3300 3200
 Wire Notes Line
 	3300 3200 3300 900 
+Text HLabel 1200 2750 0    50   Input ~ 0
+LCD_BACKLIGHT
+Text HLabel 4100 1550 0    50   Input ~ 0
+LCD_RS
+Text HLabel 4100 1650 0    50   Input ~ 0
+LCD_RW
+Text HLabel 4100 1750 0    50   Input ~ 0
+LCD_E
+Text HLabel 4100 1850 0    50   Input ~ 0
+LCD_DB0
+Text HLabel 4100 1950 0    50   Input ~ 0
+LCD_DB1
+Text HLabel 4100 2050 0    50   Input ~ 0
+LCD_DB2
+Text HLabel 4100 2150 0    50   Input ~ 0
+LCD_DB3
+Text HLabel 4100 2250 0    50   Input ~ 0
+LCD_DB4
+Text HLabel 4100 2350 0    50   Input ~ 0
+LCD_DB5
+Text HLabel 4100 2450 0    50   Input ~ 0
+LCD_DB6
+Text HLabel 4100 2550 0    50   Input ~ 0
+LCD_DB7
 $EndSCHEMATC

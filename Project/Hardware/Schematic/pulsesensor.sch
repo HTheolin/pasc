@@ -15,12 +15,12 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L PASC:Pulse_sensor U?
+L lab-rescue:Pulse_sensor-PASC U?
 U 1 1 5C5DA663
 P 5700 3400
 F 0 "U?" H 5725 3765 50  0000 C CNN
 F 1 "Pulse_sensor" H 5725 3674 50  0000 C CNN
-F 2 "" H 5700 3400 50  0001 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm" H 5700 3400 50  0001 C CNN
 F 3 "" H 5700 3400 50  0001 C CNN
 	1    5700 3400
 	1    0    0    -1  
@@ -82,6 +82,6 @@ Wire Wire Line
 	6550 3300 6700 3300
 Wire Wire Line
 	5700 3800 5700 4050
-Text Label 5250 3300 2    50   ~ 0
+Text HLabel 5250 3300 0    50   Input ~ 0
 PULSESIG
 $EndSCHEMATC

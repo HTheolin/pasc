@@ -65,8 +65,6 @@ Wire Wire Line
 Connection ~ 4250 1700
 Wire Wire Line
 	4250 1700 4250 1900
-Text Label 4350 1700 0    50   ~ 0
-NRST
 Wire Wire Line
 	3350 1700 3250 1700
 Connection ~ 3350 1700
@@ -83,4 +81,6 @@ F 3 "" H 3250 1700 50  0001 C CNN
 	1    3250 1700
 	1    0    0    -1  
 $EndComp
+Text HLabel 4350 1700 2    50   Input ~ 0
+NRST
 $EndSCHEMATC
