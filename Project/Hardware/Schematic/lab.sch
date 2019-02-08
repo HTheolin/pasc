@@ -778,17 +778,6 @@ Connection ~ 2700 1100
 Wire Wire Line
 	3600 1100 3900 1100
 Connection ~ 3900 1100
-$Comp
-L power:+5V #PWR0112
-U 1 1 5C5E5791
-P 4200 900
-F 0 "#PWR0112" H 4200 750 50  0001 C CNN
-F 1 "+5V" H 4215 1073 50  0000 C CNN
-F 2 "" H 4200 900 50  0001 C CNN
-F 3 "" H 4200 900 50  0001 C CNN
-	1    4200 900 
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3900 1600 3300 1600
 Wire Wire Line
@@ -1079,4 +1068,15 @@ Text Label 9250 5200 0    50   ~ 0
 LCD_RES
 Wire Wire Line
 	9250 5200 9650 5200
+$Comp
+L power:+12V #PWR?
+U 1 1 5C679F70
+P 4200 900
+F 0 "#PWR?" H 4200 750 50  0001 C CNN
+F 1 "+12V" H 4215 1073 50  0000 C CNN
+F 2 "" H 4200 900 50  0001 C CNN
+F 3 "" H 4200 900 50  0001 C CNN
+	1    4200 900 
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

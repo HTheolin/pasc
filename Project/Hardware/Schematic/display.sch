@@ -15,17 +15,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L power:+5V #PWR?
-U 1 1 5C58DDEB
-P 850 1000
-F 0 "#PWR?" H 850 850 50  0001 C CNN
-F 1 "+5V" H 865 1173 50  0000 C CNN
-F 2 "" H 850 1000 50  0001 C CNN
-F 3 "" H 850 1000 50  0001 C CNN
-	1    850  1000
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR?
 U 1 1 5C58DE2B
 P 850 1600
@@ -130,49 +119,26 @@ Wire Wire Line
 Text HLabel 1300 2600 0    50   Input ~ 0
 LCD_BACKLIGHT
 $Comp
-L PASC:OLED-128O064D U?
-U 1 1 5C5E0371
-P 4800 1600
-F 0 "U?" H 4700 -800 50  0000 L CNN
-F 1 "OLED-128O064D" H 4600 -650 50  0000 L CNN
-F 2 "" H 4850 1600 50  0001 C CNN
-F 3 "" H 4850 1600 50  0001 C CNN
-	1    4800 1600
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR?
 U 1 1 5C5E07BD
-P 1750 1650
-F 0 "#PWR?" H 1750 1400 50  0001 C CNN
-F 1 "GND" H 1755 1477 50  0000 C CNN
-F 2 "" H 1750 1650 50  0001 C CNN
-F 3 "" H 1750 1650 50  0001 C CNN
-	1    1750 1650
+P 1350 1850
+F 0 "#PWR?" H 1350 1600 50  0001 C CNN
+F 1 "GND" H 1355 1677 50  0000 C CNN
+F 2 "" H 1350 1850 50  0001 C CNN
+F 3 "" H 1350 1850 50  0001 C CNN
+	1    1350 1850
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1750 1650 1750 1550
-Text Label 1750 1550 0    50   ~ 0
+	1350 1850 1350 1750
+Text Label 1350 1750 0    50   ~ 0
 GND
 Text Label 4250 750  2    50   ~ 0
 GND
-Text Label 4250 3650 2    50   ~ 0
+Text Label 4250 3450 2    50   ~ 0
 GND
-Text Label 4250 1250 2    50   ~ 0
-LCD_VDD
-Text Label 4250 1450 2    50   ~ 0
+Text Label 4250 1350 2    50   ~ 0
 LCD_VSS
-Text Label 4250 1550 2    50   ~ 0
-LCD_VDD
-Text HLabel 4250 1650 0    50   Input ~ 0
-LCD_BS0
-Text HLabel 4250 1750 0    50   Input ~ 0
-LCD_BS1
-Text HLabel 4250 1850 0    50   Input ~ 0
-LCD_BS2
-Text Label 4250 1950 2    50   ~ 0
-GND
 Text HLabel 4250 2050 0    50   Input ~ 0
 LCD_RES
 Text HLabel 4250 2150 0    50   Input ~ 0
@@ -196,31 +162,6 @@ Wire Wire Line
 	4250 3250 3350 3250
 Text Label 3350 2950 0    50   ~ 0
 LCD_VSS
-$Comp
-L Device:C C?
-U 1 1 5C5E0CC4
-P 3000 3100
-F 0 "C?" H 3115 3146 50  0000 L CNN
-F 1 "C" H 3115 3055 50  0000 L CNN
-F 2 "" H 3038 2950 50  0001 C CNN
-F 3 "~" H 3000 3100 50  0001 C CNN
-	1    3000 3100
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4250 3350 3000 3350
-Text Label 3000 2950 0    50   ~ 0
-LCD_VSS
-Wire Wire Line
-	3000 3250 3000 3350
-Text Label 4250 3450 2    50   ~ 0
-LCD_VDD
-Text Label 4250 3550 2    50   ~ 0
-LCD_VSS
-NoConn ~ 4250 850 
-NoConn ~ 4250 950 
-NoConn ~ 4250 1050
-NoConn ~ 4250 1150
 Wire Wire Line
 	4250 2550 4100 2550
 Wire Wire Line
@@ -236,4 +177,160 @@ NoConn ~ 4250 2850
 NoConn ~ 4250 2950
 NoConn ~ 4250 3050
 NoConn ~ 4250 3150
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5C66DBDE
+P 850 1000
+F 0 "#PWR?" H 850 850 50  0001 C CNN
+F 1 "+3.3V" H 865 1173 50  0000 C CNN
+F 2 "" H 850 1000 50  0001 C CNN
+F 3 "" H 850 1000 50  0001 C CNN
+	1    850  1000
+	1    0    0    -1  
+$EndComp
+$Comp
+L PASC:Oled-MCTO U?
+U 1 1 5C67BD88
+P 4800 2200
+F 0 "U?" H 5277 2221 50  0000 L CNN
+F 1 "Oled-MCTO" H 5277 2130 50  0000 L CNN
+F 2 "" H 4800 2200 50  0001 C CNN
+F 3 "" H 4800 2200 50  0001 C CNN
+	1    4800 2200
+	1    0    0    -1  
+$EndComp
+Text Label 4250 850  2    50   ~ 0
+C2P
+Text Label 4250 950  2    50   ~ 0
+C2N
+Text Label 4250 1050 2    50   ~ 0
+C1P
+Text Label 4250 1150 2    50   ~ 0
+C1N
+Text Label 4250 1250 2    50   ~ 0
+LCD_VDD
+Text Label 4250 1450 2    50   ~ 0
+LCD_VDD
+Text HLabel 4250 1850 0    50   Input ~ 0
+LCD_RES
+$Comp
+L power:+3V3 #PWR?
+U 1 1 5C67D4BA
+P 3000 1100
+F 0 "#PWR?" H 3000 950 50  0001 C CNN
+F 1 "+3V3" H 3015 1273 50  0000 C CNN
+F 2 "" H 3000 1100 50  0001 C CNN
+F 3 "" H 3000 1100 50  0001 C CNN
+	1    3000 1100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5C67D500
+P 3000 1400
+F 0 "R?" H 3070 1446 50  0000 L CNN
+F 1 "1k" H 3070 1355 50  0000 L CNN
+F 2 "" V 2930 1400 50  0001 C CNN
+F 3 "~" H 3000 1400 50  0001 C CNN
+	1    3000 1400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3000 1100 3000 1250
+Wire Wire Line
+	3000 1550 3000 1700
+Text Label 3000 1700 0    50   ~ 0
+BS1
+$Comp
+L Device:R R?
+U 1 1 5C67D7C1
+P 2700 1400
+F 0 "R?" H 2770 1446 50  0000 L CNN
+F 1 "1k" H 2770 1355 50  0000 L CNN
+F 2 "" V 2630 1400 50  0001 C CNN
+F 3 "~" H 2700 1400 50  0001 C CNN
+	1    2700 1400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2700 1250 2700 1100
+Text Label 2700 1100 0    50   ~ 0
+BS2
+$Comp
+L power:GND #PWR?
+U 1 1 5C67D9C3
+P 2450 1700
+F 0 "#PWR?" H 2450 1450 50  0001 C CNN
+F 1 "GND" H 2455 1527 50  0000 C CNN
+F 2 "" H 2450 1700 50  0001 C CNN
+F 3 "" H 2450 1700 50  0001 C CNN
+	1    2450 1700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2450 1550 2450 1700
+Text Label 4250 1550 2    50   ~ 0
+BS1
+Text Label 4250 1650 2    50   ~ 0
+BS2
+$Comp
+L Device:R R?
+U 1 1 5C67E312
+P 2450 1400
+F 0 "R?" H 2520 1446 50  0000 L CNN
+F 1 "1k" H 2520 1355 50  0000 L CNN
+F 2 "" V 2380 1400 50  0001 C CNN
+F 3 "~" H 2450 1400 50  0001 C CNN
+	1    2450 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5C67E539
+P 2700 1700
+F 0 "#PWR?" H 2700 1450 50  0001 C CNN
+F 1 "GND" H 2705 1527 50  0000 C CNN
+F 2 "" H 2700 1700 50  0001 C CNN
+F 3 "" H 2700 1700 50  0001 C CNN
+	1    2700 1700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2700 1700 2700 1550
+Wire Wire Line
+	2450 1250 2450 1100
+Text Label 2450 1100 0    50   ~ 0
+DC
+Text Label 4250 1950 2    50   ~ 0
+DC
+$Comp
+L power:GND #PWR?
+U 1 1 5C67ED6A
+P 2200 1700
+F 0 "#PWR?" H 2200 1450 50  0001 C CNN
+F 1 "GND" H 2205 1527 50  0000 C CNN
+F 2 "" H 2200 1700 50  0001 C CNN
+F 3 "" H 2200 1700 50  0001 C CNN
+	1    2200 1700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2200 1550 2200 1700
+$Comp
+L Device:R R?
+U 1 1 5C67ED71
+P 2200 1400
+F 0 "R?" H 2270 1446 50  0000 L CNN
+F 1 "1k" H 2270 1355 50  0000 L CNN
+F 2 "" V 2130 1400 50  0001 C CNN
+F 3 "~" H 2200 1400 50  0001 C CNN
+	1    2200 1400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2200 1250 2200 1100
+Text Label 2200 1100 0    50   ~ 0
+CS
+Text Label 4250 1750 2    50   ~ 0
+CS
 $EndSCHEMATC
