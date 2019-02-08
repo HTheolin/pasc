@@ -70,7 +70,7 @@ F 3 "~" H 1900 3200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L lab-rescue:MAX4460ESA+-PASC U?
+L PASC:MAX4460ESA+ U?
 U 1 1 5C562619
 P 5000 2100
 AR Path="/5C562619" Ref="U?"  Part="1" 

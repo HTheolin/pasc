@@ -15,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L lab-rescue:piezo-PASC U?
+L PASC:piezo U?
 U 1 1 5C5E3EC0
 P 6600 3700
 F 0 "U?" H 6877 3746 50  0000 L CNN

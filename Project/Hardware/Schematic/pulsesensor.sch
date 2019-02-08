@@ -15,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L lab-rescue:Pulse_sensor-PASC U?
+L PASC:Pulse_sensor U?
 U 1 1 5C5DA663
 P 5700 3400
 F 0 "U?" H 5725 3765 50  0000 C CNN

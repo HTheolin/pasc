@@ -27,17 +27,6 @@ F 3 "" H 6200 2950 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	6200 2950 6200 3150
-$Comp
-L lab-rescue:lis3dh_board-PASC U?
-U 1 1 5C59F00B
-P 7350 3350
-F 0 "U?" H 7350 3825 50  0000 C CNN
-F 1 "lis3dh_board" H 7350 3734 50  0000 C CNN
-F 2 "" H 7350 3350 50  0001 C CNN
-F 3 "" H 7350 3350 50  0001 C CNN
-	1    7350 3350
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	6700 3150 6200 3150
 $Comp
@@ -129,4 +118,15 @@ Text HLabel 8000 3250 2    50   Input ~ 0
 I2C1_SDA
 Text HLabel 8000 3550 2    50   Input ~ 0
 CS_INT
+$Comp
+L PASC:lis3dh_board U?
+U 1 1 5C5E039C
+P 7350 3350
+F 0 "U?" H 7350 3825 50  0000 C CNN
+F 1 "lis3dh_board" H 7350 3734 50  0000 C CNN
+F 2 "" H 7350 3350 50  0001 C CNN
+F 3 "" H 7350 3350 50  0001 C CNN
+	1    7350 3350
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
