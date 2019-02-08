@@ -382,7 +382,7 @@ U 1 1 5C4D1603
 P 2800 4400
 F 0 "J2" H 2400 4500 50  0000 C CNN
 F 1 "6P Male" H 2500 4400 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" H 2800 4400 50  0001 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 2800 4400 50  0001 C CNN
 F 3 "~" H 2800 4400 50  0001 C CNN
 	1    2800 4400
 	1    0    0    -1  
@@ -554,7 +554,6 @@ $EndComp
 Wire Wire Line
 	4200 1100 4200 900 
 Connection ~ 4200 1100
-NoConn ~ 7500 2800
 NoConn ~ 7500 2900
 NoConn ~ 7500 3000
 NoConn ~ 7500 3100
@@ -567,16 +566,10 @@ NoConn ~ 7500 4400
 NoConn ~ 7500 4600
 NoConn ~ 7500 4500
 NoConn ~ 7500 4800
-NoConn ~ 7500 4900
-NoConn ~ 7500 5000
 NoConn ~ 7500 5500
 NoConn ~ 7500 5600
 NoConn ~ 7500 5700
 NoConn ~ 7500 5800
-NoConn ~ 6100 5200
-NoConn ~ 6100 5100
-NoConn ~ 6100 5000
-NoConn ~ 6100 4900
 NoConn ~ 6100 4100
 $Comp
 L Device:C_Small C17
@@ -619,36 +612,55 @@ S 9650 1250 1300 750
 U 5C556F23
 F0 "accelerometer" 50
 F1 "accelerometer.sch" 50
+F2 "I2C1_SCL" I L 9650 1650 50 
+F3 "I2C1_SDA" I L 9650 1850 50 
+F4 "CS_INT" I L 9650 1350 50 
 $EndSheet
 $Sheet
 S 9700 2600 1200 950 
 U 5C564E6B
 F0 "Pulse sensor" 50
 F1 "pulsesensor.sch" 50
+F2 "PULSESIG" I L 9700 3250 50 
 $EndSheet
 $Sheet
-S 9700 3900 1100 900 
+S 9700 3700 1100 900 
 U 5C564F10
 F0 "Temp Sensor" 50
 F1 "tempsensor.sch" 50
+F2 "TEMPOUT" I L 9700 4000 50 
 $EndSheet
 $Sheet
-S 9700 5350 950  850 
+S 10100 4850 700  1600
 U 5C564F2E
 F0 "Display" 50
 F1 "display.sch" 50
+F2 "LCD_BACKLIGHT" I L 10100 6150 50 
+F3 "LCD_RS" I L 10100 5850 50 
+F4 "LCD_RW" I L 10100 5950 50 
+F5 "LCD_E" I L 10100 6050 50 
+F6 "LCD_DB0" I L 10100 4900 50 
+F7 "LCD_DB1" I L 10100 5000 50 
+F8 "LCD_DB2" I L 10100 5100 50 
+F9 "LCD_DB3" I L 10100 5200 50 
+F10 "LCD_DB4" I L 10100 5300 50 
+F11 "LCD_DB5" I L 10100 5400 50 
+F12 "LCD_DB6" I L 10100 5500 50 
+F13 "LCD_DB7" I L 10100 5600 50 
 $EndSheet
 $Sheet
 S 1100 6650 1200 650 
 U 5C564F82
 F0 "Piezo" 50
 F1 "piezo.sch" 50
+F2 "PIEZOPWM" I L 1100 7000 50 
 $EndSheet
 $Sheet
 S 2900 6650 1050 650 
 U 5C564FA0
 F0 "Buttons" 50
 F1 "buttons.sch" 50
+F2 "NRST" I L 2900 7000 50 
 $EndSheet
 $Comp
 L Device:C_Small C4
@@ -891,17 +903,11 @@ Wire Wire Line
 Text Label 7900 5100 0    50   ~ 0
 I2C1_SDA
 Wire Wire Line
-	7500 5200 7900 5200
-Text Label 7900 5200 0    50   ~ 0
+	7500 5000 7900 5000
+Text Label 7900 5000 0    50   ~ 0
 I2C1_SCL
 Wire Wire Line
-	7500 5300 7900 5300
-Text Label 7900 5300 0    50   ~ 0
-CS_XL
-Wire Wire Line
-	7500 5400 7900 5400
-Text Label 7900 5400 0    50   ~ 0
-CS_INT
+	7500 4900 7900 4900
 Wire Wire Line
 	7500 2700 7900 2700
 Text Label 7900 2700 0    50   ~ 0
@@ -909,14 +915,14 @@ TEMPOUT
 Wire Wire Line
 	7500 3200 7900 3200
 Text Label 7900 3200 0    50   ~ 0
-TIM2_CH1
+PIEZOPWM
 $Comp
 L Connector:Conn_01x03_Male J3
 U 1 1 5C5B0DFA
 P 2800 5200
 F 0 "J3" H 2906 5478 50  0000 C CNN
 F 1 "Conn_01x03_Male" H 2906 5387 50  0000 C CNN
-F 2 "" H 2800 5200 50  0001 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm" H 2800 5200 50  0001 C CNN
 F 3 "~" H 2800 5200 50  0001 C CNN
 	1    2800 5200
 	1    0    0    -1  
@@ -933,8 +939,6 @@ Wire Wire Line
 	3000 5300 3350 5300
 Text Label 3350 5300 0    50   ~ 0
 USART1_RX
-Text Label 5700 4300 0    50   ~ 0
-LCD_DB0
 Text Label 5700 4400 0    50   ~ 0
 LCD_DB1
 Text Label 5700 4500 0    50   ~ 0
@@ -957,29 +961,25 @@ Wire Wire Line
 	6100 4800 5700 4800
 Text Label 5700 4800 0    50   ~ 0
 LCD_DB5
-Text Label 5700 5300 0    50   ~ 0
+Text Label 5700 4900 0    50   ~ 0
 LCD_DB6
-Text Label 5700 5400 0    50   ~ 0
+Text Label 5700 5000 0    50   ~ 0
 LCD_DB7
-Text Label 5700 5500 0    50   ~ 0
-LCD_DB8
 Wire Wire Line
-	5700 5300 6100 5300
+	5700 4900 6100 4900
 Wire Wire Line
-	5700 5400 6100 5400
+	5700 5000 6100 5000
 Wire Wire Line
-	5700 5500 6100 5500
-Wire Wire Line
-	6100 5600 5700 5600
-Text Label 5700 5600 0    50   ~ 0
+	6100 5100 5700 5100
+Text Label 5700 5100 0    50   ~ 0
 LCD_RS
 Wire Wire Line
-	6100 5700 5700 5700
-Text Label 5700 5700 0    50   ~ 0
-LSC_RW
+	6100 5200 5700 5200
+Text Label 5700 5200 0    50   ~ 0
+LCD_RW
 Wire Wire Line
-	6100 5800 5700 5800
-Text Label 5700 5800 0    50   ~ 0
+	6100 5300 5700 5300
+Text Label 5700 5300 0    50   ~ 0
 LCD_E
 $Comp
 L Connector:USB_B_Micro J1
@@ -1022,4 +1022,99 @@ F 3 "" H 1250 4100 50  0001 C CNN
 	1    1250 4100
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	7500 2800 7900 2800
+Text Label 7900 2800 0    50   ~ 0
+PULSESIG
+Text Label 7900 4900 0    50   ~ 0
+CS_INT
+NoConn ~ 7500 5400
+Text Label 6100 5400 2    50   ~ 0
+LCD_BACKLIGHT
+Wire Wire Line
+	6100 5400 5700 5400
+Wire Wire Line
+	9700 3250 9450 3250
+Text Label 9450 3250 2    50   ~ 0
+PULSESIG
+Wire Wire Line
+	9650 1650 9000 1650
+Text Label 9000 1650 0    50   ~ 0
+I2C1_SCL
+Wire Wire Line
+	9650 1850 9000 1850
+Text Label 9000 1850 0    50   ~ 0
+I2C1_SDA
+Wire Wire Line
+	9650 1350 9000 1350
+Text Label 9000 1350 0    50   ~ 0
+CS_INT
+NoConn ~ 7500 5300
+NoConn ~ 7500 5200
+Wire Wire Line
+	1100 7000 600  7000
+Text Label 600  7000 0    50   ~ 0
+PIEZOPWM
+Wire Wire Line
+	10100 4900 9700 4900
+Text Label 9700 4900 0    50   ~ 0
+LCD_DB0
+Wire Wire Line
+	10100 5000 9700 5000
+Text Label 9700 5000 0    50   ~ 0
+LCD_DB1
+Wire Wire Line
+	10100 5100 9700 5100
+Text Label 9700 5100 0    50   ~ 0
+LCD_DB2
+Wire Wire Line
+	10100 5200 9700 5200
+Text Label 9700 5200 0    50   ~ 0
+LCD_DB3
+Wire Wire Line
+	10100 5300 9700 5300
+Text Label 9700 5300 0    50   ~ 0
+LCD_DB4
+Wire Wire Line
+	10100 5400 9700 5400
+Text Label 9700 5400 0    50   ~ 0
+LCD_DB5
+Wire Wire Line
+	10100 5500 9700 5500
+Text Label 9700 5500 0    50   ~ 0
+LCD_DB6
+Wire Wire Line
+	10100 5600 9700 5600
+Text Label 9700 5600 0    50   ~ 0
+LCD_DB7
+Wire Wire Line
+	10100 5850 9700 5850
+Text Label 9700 5850 0    50   ~ 0
+LCD_RS
+Wire Wire Line
+	10100 5950 9700 5950
+Text Label 9700 5950 0    50   ~ 0
+LCD_RW
+Wire Wire Line
+	10100 6050 9700 6050
+Text Label 9700 6050 0    50   ~ 0
+LCD_E
+Wire Wire Line
+	10100 6150 9700 6150
+Text Label 10050 6150 2    50   ~ 0
+LCD_BACKLIGHT
+Wire Wire Line
+	9700 4000 9450 4000
+Text Label 9450 4000 2    50   ~ 0
+TEMPOUT
+NoConn ~ 6100 5600
+NoConn ~ 6100 5700
+NoConn ~ 6100 5800
+Wire Wire Line
+	2900 7000 2650 7000
+Text Label 2650 7000 0    50   ~ 0
+NRST
+Text Label 5700 4300 0    50   ~ 0
+LCD_DB0
+NoConn ~ 6100 5500
 $EndSCHEMATC

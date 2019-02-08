@@ -70,7 +70,7 @@ F 3 "~" H 1900 3200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L lab-rescue:MAX4460ESA+-PASC U?
+L PASC:MAX4460ESA+ U?
 U 1 1 5C562619
 P 5000 2100
 AR Path="/5C562619" Ref="U?"  Part="1" 
@@ -152,8 +152,6 @@ Text Label 7200 2300 0    50   ~ 0
 WBRIDGE-
 Text Label 7200 2100 0    50   ~ 0
 INAMPFB
-Text Label 5000 2100 2    50   ~ 0
-TEMPOUT
 $Comp
 L Device:R R?
 U 1 1 5C5639FE
@@ -341,4 +339,6 @@ Wire Wire Line
 Connection ~ 2300 1900
 Wire Wire Line
 	2300 1900 3200 1900
+Text HLabel 5000 2100 0    50   Input ~ 0
+TEMPOUT
 $EndSCHEMATC
