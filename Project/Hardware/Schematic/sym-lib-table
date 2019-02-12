@@ -1,4 +1,5 @@
 (sym_lib_table
   (lib (name lab-rescue)(type Legacy)(uri ${KIPRJMOD}/lab-rescue.lib)(options "")(descr ""))
   (lib (name PASC)(type Legacy)(uri ${KIPRJMOD}/PASC.lib)(options "")(descr ""))
+  (lib (name SJ1-3555NG)(type Legacy)(uri C:/Users/asve/Downloads/SJ1-3555NG/SJ1-3555NG.lib)(options "")(descr ""))
 )
