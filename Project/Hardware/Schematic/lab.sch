@@ -5,10 +5,10 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 7
-Title ""
-Date ""
-Rev ""
-Comp ""
+Title "Main sheet"
+Date "2019-02-12"
+Rev "1"
+Comp "PASC"
 Comment1 ""
 Comment2 ""
 Comment3 ""
@@ -698,7 +698,7 @@ U 1 1 5C624D2E
 P 1200 1300
 F 0 "BT1" H 1308 1346 50  0000 L CNN
 F 1 "Battery" H 1308 1255 50  0000 L CNN
-F 2 "" V 1200 1360 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" V 1200 1360 50  0001 C CNN
 F 3 "~" V 1200 1360 50  0001 C CNN
 	1    1200 1300
 	1    0    0    -1  
