@@ -13,7 +13,7 @@ STM32F401RE datasheet - https://www.st.com/resource/en/datasheet/stm32f401re.pdf
 High Level specification - https://docs.google.com/document/d/1pT679ALJbP6M4RAu0LiHIDUVMe5iSUqeqp4-EVYOUyA/edit# \
 Komponenter - https://docs.google.com/spreadsheets/d/1eK-V_FMpTHM5hmX8ijiI2q-JYo_6xdile7O38F0DbRs/edit#gid=0
 
-# Start by a High Level Specification
+# High Level Specification
 Hälsoarband som mäter puls och steg med pulsmätare och accelerometer.
 Knapp som startar och återställer stegräknare. Stömspar som stänger display, ev efter tid av ingen puls läsning.
 ## Purpose (what problem it solves)
@@ -29,3 +29,17 @@ Eftersom systemet är designat att vara I kontakt med person, måste tåla viss 
 Måste visa puls minst var 10e sekund under batteritid. 
 ## Robustness (how it should react to non-expected input, e.g., mal-formed packages)
 Om ingen puls stäng system. 
+
+# Gradings
+## Grade 3
+Pulse measurements from analog in.
+Timer that's set using buttons.
+Buzzer that sounds alarm when high pulse or timer reaching zero.
+USART for serial communication with com.
+## Grade 4
+Temperature measurements using analog in.
+Output to display using SPI
+Low power mode
+## Grade 5
+Accelerometer detecting steps, using accelerometer values or tap interrupts over I2C.
+Menu for selecting outout to display and other settings.
