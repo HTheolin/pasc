@@ -47,17 +47,6 @@ F 3 "http://www.nxp.com/documents/data_sheet/1N4148_1N4448.pdf" H 5700 3950 50  
 	1    5700 3950
 	0    1    1    0   
 $EndComp
-$Comp
-L Transistor_BJT:2SC1815 Q?
-U 1 1 5C5EB691
-P 5600 4600
-F 0 "Q?" H 5791 4646 50  0000 L CNN
-F 1 "2SC1815" H 5791 4555 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-92_Inline" H 5800 4525 50  0001 L CIN
-F 3 "https://media.digikey.com/pdf/Data%20Sheets/Toshiba%20PDFs/2SC1815.pdf" H 5600 4600 50  0001 L CNN
-	1    5600 4600
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	5700 3000 5700 3250
 Wire Wire Line
@@ -106,17 +95,28 @@ Wire Wire Line
 	5700 4800 5700 5050
 Wire Wire Line
 	4750 4600 4300 4600
+Text HLabel 4300 4600 0    50   Input ~ 0
+PIEZOPWM
 $Comp
-L power:+5V #PWR?
-U 1 1 5C5E2E3F
+L Transistor_BJT:2N3906 Q?
+U 1 1 5C68E108
+P 5600 4600
+F 0 "Q?" H 5791 4646 50  0000 L CNN
+F 1 "2N3906" H 5791 4555 50  0000 L CNN
+F 2 "TO_SOT_Packages_THT:TO-92_Inline_Wide" H 5800 4525 50  0001 L CIN
+F 3 "https://www.fairchildsemi.com/datasheets/2N/2N3906.pdf" H 5600 4600 50  0001 L CNN
+	1    5600 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5C6DC10D
 P 5700 3000
 F 0 "#PWR?" H 5700 2850 50  0001 C CNN
-F 1 "+5V" H 5715 3173 50  0000 C CNN
+F 1 "+3.3V" H 5715 3173 50  0000 C CNN
 F 2 "" H 5700 3000 50  0001 C CNN
 F 3 "" H 5700 3000 50  0001 C CNN
 	1    5700 3000
 	1    0    0    -1  
 $EndComp
-Text HLabel 4300 4600 0    50   Input ~ 0
-PIEZOPWM
 $EndSCHEMATC
