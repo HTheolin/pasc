@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr User 5906 5906
 encoding utf-8
-Sheet 5 8
+Sheet 5 7
 Title ""
 Date ""
 Rev ""
@@ -59,40 +59,6 @@ LCD_VDD
 Text Label 1050 1500 0    50   ~ 0
 LCD_VSS
 $Comp
-L power:GND #PWR?
-U 1 1 5C5E07BD
-P 850 2100
-AR Path="/5C564F2E/5C5E07BD" Ref="#PWR?"  Part="1" 
-AR Path="/5C5FFA20/5C5E07BD" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 850 1850 50  0001 C CNN
-F 1 "GND" H 855 1927 50  0000 C CNN
-F 2 "" H 850 2100 50  0001 C CNN
-F 3 "" H 850 2100 50  0001 C CNN
-	1    850  2100
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	850  2100 850  2000
-Text Label 850  2000 0    50   ~ 0
-GND
-Text Label 4100 750  2    50   ~ 0
-GND
-Text Label 4100 1350 2    50   ~ 0
-LCD_VSS
-Wire Wire Line
-	4100 2350 3950 2350
-Wire Wire Line
-	3950 2350 3950 2450
-Wire Wire Line
-	3950 2450 4100 2450
-Text HLabel 3950 2400 0    50   Input ~ 0
-LCD_SDA
-Text HLabel 4100 2250 0    50   Input ~ 0
-LCD_SCL
-NoConn ~ 4100 2750
-NoConn ~ 4100 2850
-NoConn ~ 4100 2950
-$Comp
 L power:+3.3V #PWR?
 U 1 1 5C66DBDE
 P 850 1000
@@ -106,280 +72,60 @@ F 3 "" H 850 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L PASC:Oled-MCTO U?
-U 1 1 5C67BD88
-P 4650 2200
-AR Path="/5C564F2E/5C67BD88" Ref="U?"  Part="1" 
-AR Path="/5C5FFA20/5C67BD88" Ref="U?"  Part="1" 
-F 0 "U?" H 4750 450 50  0000 L CNN
-F 1 "Oled-MCTO" H 4550 550 50  0000 L CNN
-F 2 "PASC:MCOT064048A1V" H 4650 2200 50  0001 C CNN
-F 3 "" H 4650 2200 50  0001 C CNN
-	1    4650 2200
+L PASC:Nokia5110 U?
+U 1 1 5C63A382
+P 3950 2200
+F 0 "U?" H 3950 2675 50  0000 C CNN
+F 1 "Nokia5110" H 3950 2584 50  0000 C CNN
+F 2 "PASC:Nokia5110" H 4000 2200 50  0001 C CNN
+F 3 "" H 4000 2200 50  0001 C CNN
+	1    3950 2200
 	1    0    0    -1  
 $EndComp
-Text Label 4100 850  2    50   ~ 0
-C2P
-Text Label 4100 950  2    50   ~ 0
-C2N
-Text Label 4100 1050 2    50   ~ 0
-C1P
-Text Label 4100 1150 2    50   ~ 0
-C1N
-Text Label 4100 1250 2    50   ~ 0
-LCD_VDD
-Text Label 4100 1450 2    50   ~ 0
-LCD_VDD
-Text HLabel 4100 1850 0    50   Input ~ 0
-LCD_RES
-$Comp
-L Device:R R?
-U 1 1 5C67D500
-P 3000 1400
-AR Path="/5C564F2E/5C67D500" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C67D500" Ref="R?"  Part="1" 
-F 0 "R?" H 3070 1446 50  0000 L CNN
-F 1 "1k" H 3070 1355 50  0000 L CNN
-F 2 "" V 2930 1400 50  0001 C CNN
-F 3 "~" H 3000 1400 50  0001 C CNN
-	1    3000 1400
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3000 1100 3000 1250
-Wire Wire Line
-	3000 1550 3000 1700
-Text Label 3000 1700 0    50   ~ 0
-BS1
-$Comp
-L Device:R R?
-U 1 1 5C67D7C1
-P 2700 1400
-AR Path="/5C564F2E/5C67D7C1" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C67D7C1" Ref="R?"  Part="1" 
-F 0 "R?" H 2770 1446 50  0000 L CNN
-F 1 "1k" H 2770 1355 50  0000 L CNN
-F 2 "" V 2630 1400 50  0001 C CNN
-F 3 "~" H 2700 1400 50  0001 C CNN
-	1    2700 1400
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2700 1250 2700 1100
-Text Label 2700 1100 0    50   ~ 0
-BS2
-$Comp
-L power:GND #PWR?
-U 1 1 5C67D9C3
-P 2450 1700
-AR Path="/5C564F2E/5C67D9C3" Ref="#PWR?"  Part="1" 
-AR Path="/5C5FFA20/5C67D9C3" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 2450 1450 50  0001 C CNN
-F 1 "GND" H 2455 1527 50  0000 C CNN
-F 2 "" H 2450 1700 50  0001 C CNN
-F 3 "" H 2450 1700 50  0001 C CNN
-	1    2450 1700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2450 1550 2450 1700
-Text Label 4100 1550 2    50   ~ 0
-BS1
-Text Label 4100 1650 2    50   ~ 0
-BS2
-$Comp
-L Device:R R?
-U 1 1 5C67E312
-P 2450 1400
-AR Path="/5C564F2E/5C67E312" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C67E312" Ref="R?"  Part="1" 
-F 0 "R?" H 2520 1446 50  0000 L CNN
-F 1 "1k" H 2520 1355 50  0000 L CNN
-F 2 "" V 2380 1400 50  0001 C CNN
-F 3 "~" H 2450 1400 50  0001 C CNN
-	1    2450 1400
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 5C67E539
-P 2700 1700
-AR Path="/5C564F2E/5C67E539" Ref="#PWR?"  Part="1" 
-AR Path="/5C5FFA20/5C67E539" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 2700 1450 50  0001 C CNN
-F 1 "GND" H 2705 1527 50  0000 C CNN
-F 2 "" H 2700 1700 50  0001 C CNN
-F 3 "" H 2700 1700 50  0001 C CNN
-	1    2700 1700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2700 1700 2700 1550
-Wire Wire Line
-	2450 1250 2450 1100
-Text Label 2450 1100 0    50   ~ 0
-DC
-Text Label 4100 1950 2    50   ~ 0
-DC
-$Comp
-L power:GND #PWR?
-U 1 1 5C67ED6A
-P 2200 1700
-AR Path="/5C564F2E/5C67ED6A" Ref="#PWR?"  Part="1" 
-AR Path="/5C5FFA20/5C67ED6A" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 2200 1450 50  0001 C CNN
-F 1 "GND" H 2205 1527 50  0000 C CNN
-F 2 "" H 2200 1700 50  0001 C CNN
-F 3 "" H 2200 1700 50  0001 C CNN
-	1    2200 1700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2200 1550 2200 1700
-$Comp
-L Device:R R?
-U 1 1 5C67ED71
-P 2200 1400
-AR Path="/5C564F2E/5C67ED71" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C67ED71" Ref="R?"  Part="1" 
-F 0 "R?" H 2270 1446 50  0000 L CNN
-F 1 "1k" H 2270 1355 50  0000 L CNN
-F 2 "" V 2130 1400 50  0001 C CNN
-F 3 "~" H 2200 1400 50  0001 C CNN
-	1    2200 1400
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2200 1250 2200 1100
-Text Label 2200 1100 0    50   ~ 0
-CS
-Text Label 4100 1750 2    50   ~ 0
-CS
-NoConn ~ 4100 2550
-NoConn ~ 4100 2650
-$Comp
-L Device:R R?
-U 1 1 5C684477
-P 2300 2950
-AR Path="/5C564F2E/5C684477" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C684477" Ref="R?"  Part="1" 
-F 0 "R?" H 2370 2996 50  0000 L CNN
-F 1 "330" H 2370 2905 50  0000 L CNN
-F 2 "" V 2230 2950 50  0001 C CNN
-F 3 "~" H 2300 2950 50  0001 C CNN
-	1    2300 2950
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 5C6844F9
-P 2300 3350
-AR Path="/5C564F2E/5C6844F9" Ref="R?"  Part="1" 
-AR Path="/5C5FFA20/5C6844F9" Ref="R?"  Part="1" 
-F 0 "R?" H 2370 3396 50  0000 L CNN
-F 1 "33" H 2370 3305 50  0000 L CNN
-F 2 "" V 2230 3350 50  0001 C CNN
-F 3 "~" H 2300 3350 50  0001 C CNN
-	1    2300 3350
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2300 3100 2300 3200
-$Comp
-L Device:R_POT RV?
-U 1 1 5C684AC3
-P 2300 3750
-AR Path="/5C564F2E/5C684AC3" Ref="RV?"  Part="1" 
-AR Path="/5C5FFA20/5C684AC3" Ref="RV?"  Part="1" 
-F 0 "RV?" H 2230 3796 50  0000 R CNN
-F 1 "R_POT" H 2230 3705 50  0000 R CNN
-F 2 "" H 2300 3750 50  0001 C CNN
-F 3 "~" H 2300 3750 50  0001 C CNN
-	1    2300 3750
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2300 3600 2300 3500
-Text Label 4100 3250 2    50   ~ 0
-LCD_VCC
-Wire Wire Line
-	2300 3900 2300 4050
-Text Label 2300 4050 0    50   ~ 0
-LCD_VSS
-Text Label 4100 3050 2    50   ~ 0
-IREF
-Wire Wire Line
-	2300 2800 2300 2650
-Text Label 2300 2650 0    50   ~ 0
-IREF
-$Comp
-L Device:C C?
-U 1 1 5C685FEC
-P 2850 2900
-AR Path="/5C564F2E/5C685FEC" Ref="C?"  Part="1" 
-AR Path="/5C5FFA20/5C685FEC" Ref="C?"  Part="1" 
-F 0 "C?" H 2965 2946 50  0000 L CNN
-F 1 "2.2u" H 2965 2855 50  0000 L CNN
-F 2 "" H 2888 2750 50  0001 C CNN
-F 3 "~" H 2850 2900 50  0001 C CNN
-	1    2850 2900
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2850 2750 2850 2650
-Text Label 2850 2650 0    50   ~ 0
-VCOMH
-Wire Wire Line
-	2850 3050 2850 3250
-Text Label 2850 3250 0    50   ~ 0
-LCD_VSS
-Text Label 4100 3450 2    50   ~ 0
-GND
-Text Label 4100 3150 2    50   ~ 0
-VCOMH
-Text Label 4100 3350 2    50   ~ 0
-LCS_VSS
-Text Label 3000 1100 0    50   ~ 0
+Text Label 3450 1950 2    50   ~ 0
 LCD_VDD
 $Comp
-L Device:C C?
-U 1 1 5C689C8F
-P 850 3150
-AR Path="/5C564F2E/5C689C8F" Ref="C?"  Part="1" 
-AR Path="/5C5FFA20/5C689C8F" Ref="C?"  Part="1" 
-F 0 "C?" H 965 3196 50  0000 L CNN
-F 1 "2.2u" H 965 3105 50  0000 L CNN
-F 2 "" H 888 3000 50  0001 C CNN
-F 3 "~" H 850 3150 50  0001 C CNN
-	1    850  3150
+L Device:R R?
+U 1 1 5C63A8F8
+P 1700 1500
+F 0 "R?" H 1770 1546 50  0000 L CNN
+F 1 "330" H 1770 1455 50  0000 L CNN
+F 2 "" V 1630 1500 50  0001 C CNN
+F 3 "~" H 1700 1500 50  0001 C CNN
+	1    1700 1500
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	850  2900 850  3000
+	1700 1650 1700 1850
+Text Label 1700 1850 0    50   ~ 0
+LED
+Text Label 3450 2050 2    50   ~ 0
+LED
 Wire Wire Line
-	850  2900 1050 2900
-Text Label 1050 2900 0    50   ~ 0
-LCD_VCC
-Wire Wire Line
-	850  3300 850  3450
-Text Label 850  3450 0    50   ~ 0
-LCD_VSS
-Text Label 4100 2150 2    50   ~ 0
-LCD_VSS
-Text Label 4100 2050 2    50   ~ 0
-LCD_VSS
+	1700 1350 1700 1150
+Text HLabel 1700 1150 1    50   Input ~ 0
+LCD_LED
 $Comp
-L PASC:+7V #PWR?
-U 1 1 5C646FD1
-P 850 2700
-F 0 "#PWR?" H 1100 2800 50  0001 C CNN
-F 1 "+7V" H 835 2874 50  0000 C CNN
-F 2 "" H 850 2700 50  0001 C CNN
-F 3 "" H 850 2700 50  0001 C CNN
-	1    850  2700
+L power:GND #PWR?
+U 1 1 5C63AC65
+P 4050 2800
+F 0 "#PWR?" H 4050 2550 50  0001 C CNN
+F 1 "GND" H 4055 2627 50  0000 C CNN
+F 2 "" H 4050 2800 50  0001 C CNN
+F 3 "" H 4050 2800 50  0001 C CNN
+	1    4050 2800
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	850  2700 850  2900
-Connection ~ 850  2900
+	4050 2650 4050 2800
+Text HLabel 3450 2300 0    50   Input ~ 0
+LCD_DN
+Text HLabel 3450 2400 0    50   Input ~ 0
+LCD_SCK
+Text HLabel 4450 2050 2    50   Input ~ 0
+LCD_SCE
+Text HLabel 4450 2150 2    50   Input ~ 0
+LCD_RST
+Text HLabel 4450 2250 2    50   Input ~ 0
+LCD_DC
 $EndSCHEMATC
