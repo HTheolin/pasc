@@ -32,14 +32,14 @@ Om ingen puls stäng system.
 
 # Gradings
 ## Grade 3
-Pulse measurements from analog in.
-Timer that's set using buttons.
-Buzzer that sounds alarm when high pulse or timer reaching zero.
+Pulse measurements from analog in. \
+Timer that's set using buttons. \
+Buzzer that sounds alarm when high pulse or timer reaching zero. \
 USART for serial communication with com.
 ## Grade 4
-Temperature measurements using analog in.
-Output to display using SPI
+Temperature measurements using analog in. \
+Output to display using SPI \
 Low power mode
 ## Grade 5
-Accelerometer detecting steps, using accelerometer values or tap interrupts over I2C.
+Accelerometer detecting steps, using accelerometer values or tap interrupts over I2C. \
 Menu for selecting outout to display and other settings.
