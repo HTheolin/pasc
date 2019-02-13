@@ -476,7 +476,6 @@ NoConn ~ 7500 3000
 NoConn ~ 7500 3100
 NoConn ~ 7500 3800
 NoConn ~ 7500 3900
-NoConn ~ 7500 4800
 NoConn ~ 7500 5500
 NoConn ~ 7500 5600
 NoConn ~ 7500 5700
@@ -872,18 +871,18 @@ Wire Wire Line
 	3950 7150 4200 7150
 Text Label 4200 7150 0    50   ~ 0
 TIM_RES
-Text Label 7900 4600 0    50   ~ 0
+Text Label 5700 5200 0    50   ~ 0
 TIM_RES
-Text Label 7900 4400 0    50   ~ 0
+Text Label 5700 5000 0    50   ~ 0
 TIM_START
-Text Label 7900 4500 0    50   ~ 0
+Text Label 5700 5100 0    50   ~ 0
 TIM_INC
 Wire Wire Line
-	7500 4400 7900 4400
+	6100 5200 5700 5200
 Wire Wire Line
-	7500 4500 7900 4500
+	6100 5100 5700 5100
 Wire Wire Line
-	7500 4600 7900 4600
+	6100 5000 5700 5000
 Wire Wire Line
 	7500 3200 7900 3200
 Text Label 7900 3200 0    50   ~ 0
@@ -896,11 +895,11 @@ Text Label 7900 3400 0    50   ~ 0
 SPI1_MOSI
 Text Label 9650 5400 2    50   ~ 0
 SPI1_MOSI
-Text Label 6100 4300 2    50   ~ 0
+Text Label 5950 4800 2    50   ~ 0
 LCD_SCE
-Text Label 6100 4400 2    50   ~ 0
+Text Label 5950 4700 2    50   ~ 0
 LCD_RST
-Text Label 6100 4500 2    50   ~ 0
+Text Label 7600 4400 0    50   ~ 0
 LCD_DC
 Text Label 9650 4900 2    50   ~ 0
 LCD_SCE
@@ -908,9 +907,7 @@ Text Label 9650 5050 2    50   ~ 0
 LCD_RST
 Text Label 9650 5200 2    50   ~ 0
 LCD_DC
-Wire Wire Line
-	7500 3300 7900 3300
-Text Label 7900 3300 0    50   ~ 0
+Text Label 5700 4900 0    50   ~ 0
 TIM3_CH1
 Text Label 9650 4750 2    50   ~ 0
 TIM3_CH1
@@ -918,21 +915,14 @@ Wire Wire Line
 	7500 4200 7900 4200
 Text Label 7900 4200 0    50   ~ 0
 PIEZOPWM
-NoConn ~ 6100 4600
-NoConn ~ 6100 4700
-NoConn ~ 6100 4800
-NoConn ~ 6100 4900
-NoConn ~ 6100 5000
-NoConn ~ 6100 5100
-NoConn ~ 6100 5200
 NoConn ~ 6100 5300
 NoConn ~ 6100 5400
 Wire Wire Line
-	6100 4300 5950 4300
+	5950 4800 6100 4800
 Wire Wire Line
-	6100 4400 5950 4400
+	5950 4700 6100 4700
 Wire Wire Line
-	6000 4500 6100 4500
+	7600 4400 7500 4400
 Wire Wire Line
 	6100 3100 6000 3100
 NoConn ~ 1450 2700
@@ -1004,4 +994,14 @@ F 3 "" H 2200 2300 50  0001 C CNN
 	1    2200 2300
 	1    0    0    -1  
 $EndComp
+NoConn ~ 6100 4300
+NoConn ~ 6100 4400
+NoConn ~ 6100 4500
+NoConn ~ 6100 4600
+NoConn ~ 7500 4500
+NoConn ~ 7500 4600
+NoConn ~ 7500 4800
+Wire Wire Line
+	6100 4900 5700 4900
+NoConn ~ 7500 3300
 $EndSCHEMATC
