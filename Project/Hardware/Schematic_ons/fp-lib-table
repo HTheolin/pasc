@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name PASC)(type KiCad)(uri ${KIPRJMOD}/PASC.pretty)(options "")(descr ""))
+  (lib (name PASC1)(type KiCad)(uri C:/Users/Simon/Desktop/E7020E/pasc-pcb_rev1/Project/Hardware/Schematic_Ubuntu/PASC.pretty)(options "")(descr ""))
+)
