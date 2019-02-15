@@ -1,5 +1,5 @@
 EESchema Schematic File Version 4
-LIBS:lab-cache
+LIBS:PCB_Simon_mount_rev2-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 5512 5512
@@ -26,7 +26,7 @@ F 3 "" H 2400 1900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3V3 #PWR0125
+L PCB_Simon_mount_rev2-rescue:+3V3-power #PWR0125
 U 1 1 5C5DA797
 P 3400 1500
 F 0 "#PWR0125" H 3400 1350 50  0001 C CNN
@@ -37,7 +37,7 @@ F 3 "" H 3400 1500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C C17
+L PCB_Simon_mount_rev2-rescue:C-Device C17
 U 1 1 5C5DA7DA
 P 3250 2100
 F 0 "C17" H 3365 2146 50  0000 L CNN
@@ -52,7 +52,7 @@ Wire Wire Line
 Wire Wire Line
 	3400 1800 3400 1500
 $Comp
-L power:GND #PWR0126
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0126
 U 1 1 5C5DA906
 P 2400 2550
 F 0 "#PWR0126" H 2400 2300 50  0001 C CNN
@@ -63,7 +63,7 @@ F 3 "" H 2400 2550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR0127
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0127
 U 1 1 5C5DA96D
 P 3250 2600
 F 0 "#PWR0127" H 3250 2350 50  0001 C CNN
@@ -82,6 +82,21 @@ Wire Wire Line
 	3250 1800 3400 1800
 Wire Wire Line
 	2400 2300 2400 2550
-Text HLabel 1950 1800 0    50   Input ~ 0
+Text HLabel 1100 1800 0    50   Input ~ 0
 PULSESIG
+$Comp
+L Device:R R18
+U 1 1 5C68650D
+P 1350 1800
+F 0 "R18" V 1143 1800 50  0000 C CNN
+F 1 "1k" V 1234 1800 50  0000 C CNN
+F 2 "Resistors_SMD:R_0805_HandSoldering" V 1280 1800 50  0001 C CNN
+F 3 "~" H 1350 1800 50  0001 C CNN
+	1    1350 1800
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1500 1800 1950 1800
+Wire Wire Line
+	1200 1800 1100 1800
 $EndSCHEMATC

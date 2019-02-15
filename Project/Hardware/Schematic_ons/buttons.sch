@@ -1,5 +1,5 @@
 EESchema Schematic File Version 4
-LIBS:lab-cache
+LIBS:PCB_Simon_mount_rev2-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 5512 9055
@@ -48,7 +48,7 @@ Connection ~ 2250 1400
 Wire Wire Line
 	2250 1400 2250 1600
 $Comp
-L power:GND #PWR0139
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0139
 U 1 1 5C5ED863
 P 2150 1400
 F 0 "#PWR0139" H 2150 1150 50  0001 C CNN
@@ -84,7 +84,7 @@ TIM_START
 Wire Wire Line
 	2250 3000 2250 3200
 $Comp
-L power:+3.3V #PWR0140
+L PCB_Simon_mount_rev2-rescue:+3.3V-power #PWR0140
 U 1 1 5C68E9D0
 P 2050 3100
 F 0 "#PWR0140" H 2050 2950 50  0001 C CNN
@@ -104,7 +104,7 @@ Wire Wire Line
 Wire Wire Line
 	3150 3000 3150 3200
 $Comp
-L Device:R R15
+L PCB_Simon_mount_rev2-rescue:R-Device R15
 U 1 1 5C68EFD4
 P 3450 3550
 F 0 "R15" H 3520 3596 50  0000 L CNN
@@ -120,7 +120,7 @@ Connection ~ 3150 3200
 Wire Wire Line
 	3150 3200 3150 3400
 $Comp
-L power:GND #PWR0141
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0141
 U 1 1 5C68F32C
 P 3450 3800
 F 0 "#PWR0141" H 3450 3550 50  0001 C CNN
@@ -131,12 +131,12 @@ F 3 "" H 3450 3800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3450 3700 3450 3800
+	3450 3700 3450 3750
 Wire Wire Line
 	3450 3400 3450 3200
 Connection ~ 3450 3200
 Wire Wire Line
-	3450 3200 3650 3200
+	3450 3200 3600 3200
 $Comp
 L PASC:MomentSwitch U10
 U 1 1 5C68FABB
@@ -161,7 +161,7 @@ TIM_INC
 Wire Wire Line
 	2250 4350 2250 4550
 $Comp
-L power:+3.3V #PWR0142
+L PCB_Simon_mount_rev2-rescue:+3.3V-power #PWR0142
 U 1 1 5C68FAC8
 P 2050 4450
 F 0 "#PWR0142" H 2050 4300 50  0001 C CNN
@@ -181,7 +181,7 @@ Wire Wire Line
 Wire Wire Line
 	3150 4350 3150 4550
 $Comp
-L Device:R R16
+L PCB_Simon_mount_rev2-rescue:R-Device R16
 U 1 1 5C68FAD3
 P 3450 4900
 F 0 "R16" H 3520 4946 50  0000 L CNN
@@ -197,7 +197,7 @@ Connection ~ 3150 4550
 Wire Wire Line
 	3150 4550 3150 4750
 $Comp
-L power:GND #PWR0143
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0143
 U 1 1 5C68FADD
 P 3450 5150
 F 0 "#PWR0143" H 3450 4900 50  0001 C CNN
@@ -208,12 +208,12 @@ F 3 "" H 3450 5150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3450 5050 3450 5150
+	3450 5050 3450 5100
 Wire Wire Line
 	3450 4750 3450 4550
 Connection ~ 3450 4550
 Wire Wire Line
-	3450 4550 3650 4550
+	3450 4550 3550 4550
 $Comp
 L PASC:MomentSwitch U11
 U 1 1 5C6902F1
@@ -238,7 +238,7 @@ TIM_RES
 Wire Wire Line
 	2250 5550 2250 5750
 $Comp
-L power:+3.3V #PWR0144
+L PCB_Simon_mount_rev2-rescue:+3.3V-power #PWR0144
 U 1 1 5C6902FE
 P 2050 5650
 F 0 "#PWR0144" H 2050 5500 50  0001 C CNN
@@ -258,7 +258,7 @@ Wire Wire Line
 Wire Wire Line
 	3150 5550 3150 5750
 $Comp
-L Device:R R17
+L PCB_Simon_mount_rev2-rescue:R-Device R17
 U 1 1 5C690309
 P 3450 6100
 F 0 "R17" H 3520 6146 50  0000 L CNN
@@ -274,7 +274,7 @@ Connection ~ 3150 5750
 Wire Wire Line
 	3150 5750 3150 5950
 $Comp
-L power:GND #PWR0145
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0145
 U 1 1 5C690313
 P 3450 6350
 F 0 "#PWR0145" H 3450 6100 50  0001 C CNN
@@ -285,10 +285,89 @@ F 3 "" H 3450 6350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3450 6250 3450 6350
+	3450 6250 3450 6300
 Wire Wire Line
 	3450 5950 3450 5750
 Connection ~ 3450 5750
 Wire Wire Line
-	3450 5750 3650 5750
+	3450 5750 3550 5750
+$Comp
+L Device:C_Small C21
+U 1 1 5C6871FB
+P 3700 3550
+F 0 "C21" H 3792 3596 50  0000 L CNN
+F 1 "100n" H 3792 3505 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3700 3550 50  0001 C CNN
+F 3 "~" H 3700 3550 50  0001 C CNN
+	1    3700 3550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C20
+U 1 1 5C687354
+P 3650 4900
+F 0 "C20" H 3742 4946 50  0000 L CNN
+F 1 "100n" H 3742 4855 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3650 4900 50  0001 C CNN
+F 3 "~" H 3650 4900 50  0001 C CNN
+	1    3650 4900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C22
+U 1 1 5C687D78
+P 3700 6100
+F 0 "C22" H 3792 6146 50  0000 L CNN
+F 1 "100n" H 3792 6055 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3700 6100 50  0001 C CNN
+F 3 "~" H 3700 6100 50  0001 C CNN
+	1    3700 6100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3650 5000 3650 5100
+Wire Wire Line
+	3650 5100 3450 5100
+Connection ~ 3450 5100
+Wire Wire Line
+	3450 5100 3450 5150
+Wire Wire Line
+	3650 4800 3650 4650
+Wire Wire Line
+	3650 4650 3550 4650
+Wire Wire Line
+	3550 4650 3550 4550
+Connection ~ 3550 4550
+Wire Wire Line
+	3550 4550 3650 4550
+Wire Wire Line
+	3700 3650 3700 3750
+Wire Wire Line
+	3700 3750 3450 3750
+Connection ~ 3450 3750
+Wire Wire Line
+	3450 3750 3450 3800
+Wire Wire Line
+	3700 3450 3600 3450
+Wire Wire Line
+	3600 3450 3600 3200
+Connection ~ 3600 3200
+Wire Wire Line
+	3600 3200 3650 3200
+Wire Wire Line
+	3700 6200 3700 6300
+Wire Wire Line
+	3700 6300 3450 6300
+Connection ~ 3450 6300
+Wire Wire Line
+	3450 6300 3450 6350
+Wire Wire Line
+	3700 6000 3700 5850
+Wire Wire Line
+	3700 5850 3550 5850
+Wire Wire Line
+	3550 5850 3550 5750
+Connection ~ 3550 5750
+Wire Wire Line
+	3550 5750 3650 5750
 $EndSCHEMATC
