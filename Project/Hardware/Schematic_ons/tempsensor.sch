@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:PCB_Simon_mount_rev2-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 9055 6693
@@ -14,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Sensor_Temperature:PT1000 TH1
+L PCB_Simon_mount_rev2-rescue:PT1000-Sensor_Temperature TH1
 U 1 1 5C561FEF
 P 2700 2000
 F 0 "TH1" H 2798 2046 50  0000 L CNN
@@ -25,7 +26,7 @@ F 3 "https://www.heraeus.com/media/media/group/doc_group/products_1/hst/sot_to/d
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R7
+L PCB_Simon_mount_rev2-rescue:R-Device R7
 U 1 1 5C5621D5
 P 2700 1600
 F 0 "R7" H 2770 1646 50  0000 L CNN
@@ -36,7 +37,7 @@ F 3 "~" H 2700 1600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R3
+L PCB_Simon_mount_rev2-rescue:R-Device R3
 U 1 1 5C5622D1
 P 1400 2000
 F 0 "R3" H 1470 2046 50  0000 L CNN
@@ -47,7 +48,7 @@ F 3 "~" H 1400 2000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R8
+L PCB_Simon_mount_rev2-rescue:R-Device R8
 U 1 1 5C562312
 P 2700 2600
 F 0 "R8" H 2770 2646 50  0000 L CNN
@@ -58,7 +59,7 @@ F 3 "~" H 2700 2600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R4
+L PCB_Simon_mount_rev2-rescue:R-Device R4
 U 1 1 5C56234C
 P 1400 2600
 F 0 "R4" H 1470 2646 50  0000 L CNN
@@ -82,7 +83,7 @@ F 3 "" H 4500 1500 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3V3 #PWR0128
+L PCB_Simon_mount_rev2-rescue:+3V3-power #PWR0128
 U 1 1 5C5626CF
 P 1100 2100
 F 0 "#PWR0128" H 1100 1950 50  0001 C CNN
@@ -116,7 +117,7 @@ Wire Wire Line
 Wire Wire Line
 	2700 1750 2700 1850
 $Comp
-L power:GND #PWR0129
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0129
 U 1 1 5C562A08
 P 3100 2450
 F 0 "#PWR0129" H 3100 2200 50  0001 C CNN
@@ -152,7 +153,7 @@ WBRIDGE-
 Text Label 6700 1500 0    50   ~ 0
 INAMPFB
 $Comp
-L Device:R R9
+L PCB_Simon_mount_rev2-rescue:R-Device R9
 U 1 1 5C5639FE
 P 4100 3100
 F 0 "R9" H 4170 3146 50  0000 L CNN
@@ -163,7 +164,7 @@ F 3 "~" H 4100 3100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R10
+L PCB_Simon_mount_rev2-rescue:R-Device R10
 U 1 1 5C563A36
 P 4100 3500
 F 0 "R10" H 4170 3546 50  0000 L CNN
@@ -187,7 +188,7 @@ INAMPFB
 Text Label 4100 2900 0    50   ~ 0
 TEMPOUT
 $Comp
-L power:GND #PWR0130
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0130
 U 1 1 5C5640C7
 P 4100 4150
 F 0 "#PWR0130" H 4100 3900 50  0001 C CNN
@@ -208,7 +209,7 @@ Wire Notes Line
 Wire Notes Line
 	3900 4500 3900 2700
 $Comp
-L power:+3V3 #PWR0131
+L PCB_Simon_mount_rev2-rescue:+3V3-power #PWR0131
 U 1 1 5C56452F
 P 7200 1400
 F 0 "#PWR0131" H 7200 1250 50  0001 C CNN
@@ -223,7 +224,7 @@ Wire Wire Line
 Wire Wire Line
 	7200 1600 6700 1600
 $Comp
-L power:GND #PWR0132
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0132
 U 1 1 5C564858
 P 4000 1800
 F 0 "#PWR0132" H 4000 1550 50  0001 C CNN
@@ -244,7 +245,7 @@ Instrumentation Amplifier
 Text Notes 1000 1000 0    50   ~ 0
 Wheatstone Bridge for Pt1000 thermistor.\n
 $Comp
-L Device:C C18
+L PCB_Simon_mount_rev2-rescue:C-Device C18
 U 1 1 5C565EBC
 P 7200 1900
 F 0 "C18" H 7315 1946 50  0000 L CNN
@@ -258,7 +259,7 @@ Wire Wire Line
 	7200 1600 7200 1750
 Connection ~ 7200 1600
 $Comp
-L power:GND #PWR0133
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0133
 U 1 1 5C5665E0
 P 7200 2200
 F 0 "#PWR0133" H 7200 1950 50  0001 C CNN
@@ -285,7 +286,7 @@ Wire Notes Line
 Wire Notes Line
 	3700 3100 3700 800 
 $Comp
-L Device:R R5
+L PCB_Simon_mount_rev2-rescue:R-Device R5
 U 1 1 5C58B777
 P 1800 2000
 F 0 "R5" H 1870 2046 50  0000 L CNN
@@ -296,7 +297,7 @@ F 3 "~" H 1800 2000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R6
+L PCB_Simon_mount_rev2-rescue:R-Device R6
 U 1 1 5C58B7A7
 P 1800 2600
 F 0 "R6" H 1870 2646 50  0000 L CNN
@@ -307,7 +308,7 @@ F 3 "~" H 1800 2600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R11
+L PCB_Simon_mount_rev2-rescue:R-Device R11
 U 1 1 5C58C2D0
 P 4100 3900
 F 0 "R11" H 4170 3946 50  0000 L CNN
