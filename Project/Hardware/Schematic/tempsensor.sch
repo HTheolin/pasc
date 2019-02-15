@@ -20,7 +20,7 @@ U 1 1 5C561FEF
 P 2700 2000
 F 0 "TH1" H 2798 2046 50  0000 L CNN
 F 1 "PT1000" H 2798 1955 50  0000 L CNN
-F 2 "" H 2700 2050 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical" H 2700 2050 50  0001 C CNN
 F 3 "https://www.heraeus.com/media/media/group/doc_group/products_1/hst/sot_to/de_15/to_92_d.pdf" H 2700 2050 50  0001 C CNN
 	1    2700 2000
 	1    0    0    -1  
@@ -77,7 +77,7 @@ AR Path="/5C562619" Ref="U?"  Part="1"
 AR Path="/5C564F10/5C562619" Ref="U5"  Part="1" 
 F 0 "U5" H 5600 1887 60  0000 C CNN
 F 1 "MAX4460ESA+" H 5600 1781 60  0000 C CNN
-F 2 "21-0041B_8" H 5600 1740 60  0001 C CNN
+F 2 "PASC:MAX4460ESA+" H 5600 1740 60  0001 C CNN
 F 3 "" H 4500 1500 60  0000 C CNN
 	1    4500 1500
 	1    0    0    -1  
