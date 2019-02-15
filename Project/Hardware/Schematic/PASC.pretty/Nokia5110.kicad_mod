@@ -1,4 +1,4 @@
-(module Nokia5110 (layer F.Cu) (tedit 5C6281E8)
+(module Nokia5110 (layer F.Cu) (tedit 5C66BD40)
   (descr "Through hole straight pin header, 1x08, 2.54mm pitch, single row")
   (tags "Through hole pin header THT 1x08 2.54mm single row")
   (fp_text reference REF** (at -11.23 17 90) (layer F.SilkS)
@@ -68,8 +68,8 @@
   (pad "" thru_hole circle (at 18.5 18.5) (size 6 6) (drill 5) (layers *.Cu *.Mask))
   (pad "" thru_hole circle (at 18.5 -18.5) (size 6 6) (drill 5) (layers *.Cu *.Mask))
   (pad "" thru_hole circle (at -18.5 -18.5) (size 6 6) (drill 5) (layers *.Cu *.Mask))
-  (model ${KISYS3DMOD}/Pin_Headers.3dshapes/Pin_Header_Straight_1x08_Pitch2.54mm.wrl
-    (at (xyz 0 0 0))
+  (model "C:/Users/asve/Desktop/Inbyggda System/Git/pasc/Project/Hardware/3D/10168.STEP"
+    (offset (xyz -22.47899966239929 -22.47899966239929 15.0000002547226))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 0))
   )
