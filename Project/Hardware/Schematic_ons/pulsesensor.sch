@@ -82,21 +82,21 @@ Wire Wire Line
 	3250 1800 3400 1800
 Wire Wire Line
 	2400 2300 2400 2550
-Text HLabel 1100 1800 0    50   Input ~ 0
-PULSESIG
+Wire Wire Line
+	1950 1800 1500 1800
+Wire Wire Line
+	1200 1800 1100 1800
 $Comp
 L Device:R R18
 U 1 1 5C68650D
 P 1350 1800
 F 0 "R18" V 1143 1800 50  0000 C CNN
 F 1 "1k" V 1234 1800 50  0000 C CNN
-F 2 "Resistors_SMD:R_0805_HandSoldering" V 1280 1800 50  0001 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 1280 1800 50  0001 C CNN
 F 3 "~" H 1350 1800 50  0001 C CNN
 	1    1350 1800
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	1500 1800 1950 1800
-Wire Wire Line
-	1200 1800 1100 1800
+Text HLabel 1100 1800 0    50   Input ~ 0
+PULSESIG
 $EndSCHEMATC

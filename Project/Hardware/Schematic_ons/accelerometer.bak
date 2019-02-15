@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:PCB_Simon_mount_rev2-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 5512 5512
@@ -14,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L power:+3.3V #PWR0120
+L PCB_Simon_mount_rev2-rescue:+3.3V-power #PWR0120
 U 1 1 5C5AB0A3
 P 1300 1850
 F 0 "#PWR0120" H 1300 1700 50  0001 C CNN
@@ -29,7 +30,7 @@ Wire Wire Line
 Wire Wire Line
 	1800 2050 1300 2050
 $Comp
-L power:GND #PWR0121
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0121
 U 1 1 5C59F3FC
 P 2300 2850
 F 0 "#PWR0121" H 2300 2600 50  0001 C CNN
@@ -42,7 +43,7 @@ $EndComp
 Wire Wire Line
 	2300 2750 2300 2850
 $Comp
-L power:GND #PWR0122
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0122
 U 1 1 5C59F76F
 P 4100 2500
 F 0 "#PWR0122" H 4100 2250 50  0001 C CNN
@@ -54,7 +55,7 @@ F 3 "" H 4100 2500 50  0001 C CNN
 $EndComp
 NoConn ~ 1800 2200
 $Comp
-L Device:C C16
+L PCB_Simon_mount_rev2-rescue:C-Device C16
 U 1 1 5C5A61DB
 P 1300 2350
 F 0 "C16" H 1415 2396 50  0000 L CNN
@@ -65,7 +66,7 @@ F 3 "~" H 1300 2350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR0123
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0123
 U 1 1 5C5A62A1
 P 1300 2650
 F 0 "#PWR0123" H 1300 2400 50  0001 C CNN
@@ -93,7 +94,7 @@ SDO
 Text Label 3100 2350 0    50   ~ 0
 CS_XL
 $Comp
-L power:+3V3 #PWR0124
+L PCB_Simon_mount_rev2-rescue:+3V3-power #PWR0124
 U 1 1 5C5D1727
 P 4100 1900
 F 0 "#PWR0124" H 4100 1750 50  0001 C CNN
