@@ -15,7 +15,7 @@ Komponenter - https://docs.google.com/spreadsheets/d/1eK-V_FMpTHM5hmX8ijiI2q-JYo
 
 # High Level Specification
 Hälsoarband som mäter puls och steg med pulsmätare och accelerometer.
-Knapp som startar och återställer stegräknare. Stömspar som stänger display, ev efter tid av ingen puls läsning.
+Knapp som startar och återställer stegräknare. Stömspar som stänger display, sänker sampling frekvens, ... ev. efter lång tid utan knapptryck.
 ## Purpose (what problem it solves)
 Mäta puls och känna av om pulsen blir låg/hög, varna vid dessa.
 ## Limitations (what problem(s) it cannot solve)
