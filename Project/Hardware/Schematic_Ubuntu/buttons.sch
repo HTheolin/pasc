@@ -79,7 +79,7 @@ Wire Wire Line
 	2350 3000 2250 3000
 Wire Wire Line
 	2250 3400 2350 3400
-Text HLabel 3650 3200 2    50   Input ~ 0
+Text HLabel 4050 3200 2    50   Input ~ 0
 TIM_START
 Wire Wire Line
 	2250 3000 2250 3200
@@ -135,8 +135,6 @@ Wire Wire Line
 Wire Wire Line
 	3450 3400 3450 3200
 Connection ~ 3450 3200
-Wire Wire Line
-	3450 3200 3650 3200
 $Comp
 L PASC:MomentSwitch U10
 U 1 1 5C68FABB
@@ -156,7 +154,7 @@ Wire Wire Line
 	2350 4350 2250 4350
 Wire Wire Line
 	2250 4750 2350 4750
-Text HLabel 3650 4550 2    50   Input ~ 0
+Text HLabel 4050 4550 2    50   Input ~ 0
 TIM_INC
 Wire Wire Line
 	2250 4350 2250 4550
@@ -212,8 +210,6 @@ Wire Wire Line
 Wire Wire Line
 	3450 4750 3450 4550
 Connection ~ 3450 4550
-Wire Wire Line
-	3450 4550 3650 4550
 $Comp
 L PASC:MomentSwitch U11
 U 1 1 5C6902F1
@@ -233,7 +229,7 @@ Wire Wire Line
 	2350 5550 2250 5550
 Wire Wire Line
 	2250 5950 2350 5950
-Text HLabel 3650 5750 2    50   Input ~ 0
+Text HLabel 4100 5750 2    50   Input ~ 0
 TIM_RES
 Wire Wire Line
 	2250 5550 2250 5750
@@ -289,6 +285,73 @@ Wire Wire Line
 Wire Wire Line
 	3450 5950 3450 5750
 Connection ~ 3450 5750
+$Comp
+L Device:C C20
+U 1 1 5C67193D
+P 3850 3550
+F 0 "C20" H 3965 3596 50  0000 L CNN
+F 1 "C" H 3965 3505 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3888 3400 50  0001 C CNN
+F 3 "~" H 3850 3550 50  0001 C CNN
+	1    3850 3550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C21
+U 1 1 5C67197D
+P 3850 4900
+F 0 "C21" H 3965 4946 50  0000 L CNN
+F 1 "C" H 3965 4855 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3888 4750 50  0001 C CNN
+F 3 "~" H 3850 4900 50  0001 C CNN
+	1    3850 4900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C22
+U 1 1 5C671B5E
+P 3850 6100
+F 0 "C22" H 3965 6146 50  0000 L CNN
+F 1 "C" H 3965 6055 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 3888 5950 50  0001 C CNN
+F 3 "~" H 3850 6100 50  0001 C CNN
+	1    3850 6100
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
-	3450 5750 3650 5750
+	3450 3200 3850 3200
+Wire Wire Line
+	3850 3400 3850 3200
+Connection ~ 3850 3200
+Wire Wire Line
+	3850 3200 4050 3200
+Wire Wire Line
+	3850 3700 3850 3800
+Wire Wire Line
+	3850 3800 3450 3800
+Connection ~ 3450 3800
+Wire Wire Line
+	3450 4550 3850 4550
+Wire Wire Line
+	3850 4550 3850 4750
+Connection ~ 3850 4550
+Wire Wire Line
+	3850 4550 4050 4550
+Wire Wire Line
+	3850 5050 3850 5150
+Wire Wire Line
+	3850 5150 3450 5150
+Connection ~ 3450 5150
+Wire Wire Line
+	3450 5750 3850 5750
+Wire Wire Line
+	3850 5750 3850 5950
+Connection ~ 3850 5750
+Wire Wire Line
+	3850 5750 4100 5750
+Wire Wire Line
+	3850 6250 3850 6350
+Wire Wire Line
+	3850 6350 3450 6350
+Connection ~ 3450 6350
 $EndSCHEMATC
