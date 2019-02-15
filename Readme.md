@@ -50,3 +50,5 @@ August - ADC, Buttons, Display Layouts \
 Simon - USART, Display \
 Ridge - Timer, Piezo \
 Henrik - Display, Acccelerometer
+
+![Alt text](/Project/Design/ProjectHigh.png?raw=true "System design")
