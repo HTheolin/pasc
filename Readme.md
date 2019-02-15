@@ -43,3 +43,10 @@ Low power mode
 ## Grade 5
 Accelerometer detecting steps, using accelerometer values or tap interrupts over I2C. \
 Menu for selecting outout to display and other settings.
+
+# Group division
+All - STM 32 init, Soldering \
+August - ADC, Buttons, Display Layouts \
+Simon - USART, Display \
+Ridge - Timer, Piezo \
+Henrik - Display, Acccelerometer
