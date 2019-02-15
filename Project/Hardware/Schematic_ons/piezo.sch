@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:PCB_Simon_mount_rev2-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 5512 5512
@@ -25,7 +26,7 @@ F 3 "" H 3800 1800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R14
+L PCB_Simon_mount_rev2-rescue:R-Device R14
 U 1 1 5C5EB38A
 P 2900 1600
 F 0 "R14" H 2970 1646 50  0000 L CNN
@@ -36,7 +37,7 @@ F 3 "~" H 2900 1600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Diode:1N4148 D1
+L PCB_Simon_mount_rev2-rescue:1N4148-Diode D1
 U 1 1 5C5EB4E1
 P 2900 2050
 F 0 "D1" V 2854 2129 50  0000 L CNN
@@ -67,7 +68,7 @@ Connection ~ 2900 2300
 Wire Wire Line
 	2900 2300 2900 2500
 $Comp
-L Device:R R13
+L PCB_Simon_mount_rev2-rescue:R-Device R13
 U 1 1 5C5EB823
 P 2100 2700
 F 0 "R13" V 1893 2700 50  0000 C CNN
@@ -80,7 +81,7 @@ $EndComp
 Wire Wire Line
 	2250 2700 2600 2700
 $Comp
-L power:GND #PWR0137
+L PCB_Simon_mount_rev2-rescue:GND-power #PWR0137
 U 1 1 5C5EB928
 P 2900 3150
 F 0 "#PWR0137" H 2900 2900 50  0001 C CNN
@@ -97,7 +98,7 @@ Wire Wire Line
 Text HLabel 1500 2700 0    50   Input ~ 0
 PIEZOPWM
 $Comp
-L power:+3.3V #PWR0138
+L PCB_Simon_mount_rev2-rescue:+3.3V-power #PWR0138
 U 1 1 5C6DC10D
 P 2900 1100
 F 0 "#PWR0138" H 2900 950 50  0001 C CNN
@@ -108,7 +109,7 @@ F 3 "" H 2900 1100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Transistor_BJT:2N3904 Q1
+L PCB_Simon_mount_rev2-rescue:2N3904-Transistor_BJT Q1
 U 1 1 5C64EC5C
 P 2800 2700
 F 0 "Q1" H 2991 2746 50  0000 L CNN

@@ -3,4 +3,5 @@
   (lib (name PASC)(type Legacy)(uri ${KIPRJMOD}/PASC.lib)(options "")(descr ""))
   (lib (name SJ1-3555NG)(type Legacy)(uri C:/Users/asve/Downloads/SJ1-3555NG/SJ1-3555NG.lib)(options "")(descr "")(disabled))
   (lib (name e7020e)(type Legacy)(uri ${KIPRJMOD}/e7020e.lib)(options "")(descr ""))
+  (lib (name PCB_Simon_mount_rev2-rescue)(type Legacy)(uri ${KIPRJMOD}/PCB_Simon_mount_rev2-rescue.lib)(options "")(descr ""))
 )

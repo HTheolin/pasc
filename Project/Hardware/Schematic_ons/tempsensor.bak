@@ -1,5 +1,4 @@
 EESchema Schematic File Version 4
-LIBS:lab-cache
 EELAYER 26 0
 EELAYER END
 $Descr User 9055 6693
@@ -77,7 +76,7 @@ AR Path="/5C562619" Ref="U?"  Part="1"
 AR Path="/5C564F10/5C562619" Ref="U5"  Part="1" 
 F 0 "U5" H 5600 1887 60  0000 C CNN
 F 1 "MAX4460ESA+" H 5600 1781 60  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-8_Handsoldering" H 5600 1740 60  0001 C CNN
+F 2 "Package_SO:SO-8_5.3x6.2mm_P1.27mm" H 5600 1740 60  0001 C CNN
 F 3 "" H 4500 1500 60  0000 C CNN
 	1    4500 1500
 	1    0    0    -1  
