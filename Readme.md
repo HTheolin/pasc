@@ -19,7 +19,7 @@ Knapp som startar och återställer stegräknare. Strömspar som stänger displa
 ## Purpose (what problem it solves)
 Mäta puls och känna av om pulsen blir låg/hög, varna vid dessa.
 ## Limitations (what problem(s) it cannot solve)
-Visar endast realtid puls, yttre temperatur och steg, inget minne. Larmar endast närmaste omgivnignen. 
+Visar endast realtid puls, yttre temperatur och steg, inget minne. Larmar endast närmaste omgivningen. 
 ## Behaviour (how the problem is solved)
 Genom att mäta puls med en sensor en gång per sek, om den blir låg eller hög starta larm med högtalare. Visar data på display. Återställer data och startar genom knapptryck. Med detta system skapas en tryggare värld.
 
@@ -42,7 +42,7 @@ Output to display using SPI \
 Low power mode
 ## Grade 5
 Accelerometer detecting steps, using accelerometer values or tap interrupts over I2C. \
-Menu for selecting outout to display and other settings.
+Menu for selecting output to display and other settings.
 
 # Group division
 All - STM 32 init, Soldering \
