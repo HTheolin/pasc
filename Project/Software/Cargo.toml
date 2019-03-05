@@ -1,0 +1,23 @@
+[package]
+name = "Software"
+version = "0.1.0"
+authors = ["sheepwall <a.sve@live.se>", "henthe-5 <henthe-5@student.ltu.se"]
+edition = "2018"
+
+[dependencies]
+panic-halt = "0.2.0"
+
+[dependencies.cortex-m]
+version = "0.5.8"
+
+[dependencies.cortex-m-rtfm]
+version = "0.4.2"
+
+[dependencies.stm32f4xx-hal]
+git = "https://github.com/stm32-rs/stm32f4xx-hal.git"
+version = "0.3.0"
+features = ["stm32f413", "rt"] # 413 is less buggy than 411.
+
+[[bin]]
+name = "Software"
+path = "main.rs"
