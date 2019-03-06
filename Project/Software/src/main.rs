@@ -8,7 +8,7 @@
 
 extern crate panic_halt;
 extern crate stm32f4xx_hal as hal;
-use cortex_m::{iprintln, Peripherals};
+use cortex_m::{iprintln};
 
 use rtfm::app;
 
@@ -16,14 +16,12 @@ use rtfm::app;
 const APP: () = {
     #[init]
     fn init() {
-    
+        let stim = &mut core.ITM.stim[0];
+        iprintln!(stim, "Det fungerar!");
     }
 
-    #[idle]
+    #[idle(resources = [])]
     fn idle() -> ! {
-        let mut peripherals = Peripherals::take().unwrap();
-        let stim = &mut peripherals.ITM.stim[0]; // Stimulus port.
-        iprintln!(stim, "Det fungerar!");
         loop {}
     }
 };

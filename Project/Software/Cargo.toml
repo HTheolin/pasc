@@ -20,4 +20,3 @@ features = ["stm32f413", "rt"] # 413 is less buggy than 411.
 
 [[bin]]
 name = "Software"
-path = "main.rs"
