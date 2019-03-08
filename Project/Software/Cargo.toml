@@ -5,13 +5,25 @@ authors = ["sheepwall <a.sve@live.se>", "henthe-5 <henthe-5@student.ltu.se"]
 edition = "2018"
 
 [dependencies]
+cortex-m-rt = "0.6.7"
+cortex-m-semihosting = "0.3.2"
+
+# panic-abort = "0.3.1" # requires nightly toolchain
 panic-halt = "0.2.0"
+panic-semihosting = "0.5.1"
+panic-itm = "0.4.0"
+
+bare-metal = "0.2.4"
+nb = "0.1.1"
+heapless = "0.4.1"
 
 [dependencies.cortex-m]
 version = "0.5.8"
 
+
 [dependencies.cortex-m-rtfm]
-version = "0.4.2"
+version = "0.4.0"
+features = ["timer-queue"]
 
 [dependencies.stm32f4xx-hal]
 git = "https://github.com/stm32-rs/stm32f4xx-hal.git"
