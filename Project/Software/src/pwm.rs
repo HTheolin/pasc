@@ -374,14 +374,14 @@ macro_rules! impl_halPwm {
             fn set_duty(&mut self, channel: Channel, duty: u32) {
                 //let duty : u16 = u16(duty).unwrap();
                 match channel {
-                    Channel::_1 => self.0.ccr1.write(|w| unsafe{
-                        w.ccr1().bits(duty)}),
-                    Channel::_2 => self.0.ccr2.write(|w| unsafe{
-                        w.ccr2().bits(duty)}),
-                    Channel::_3 => self.0.ccr3.write(|w| unsafe{
-                        w.ccr3().bits(duty)}),
-                    Channel::_4 => self.0.ccr4.write(|w| unsafe{
-                        w.ccr4().bits(duty)}),
+                    Channel::_1 => self.0.ccr1.write(|w|
+                        w.ccr1().bits(duty)),
+                    Channel::_2 => self.0.ccr2.write(|w|
+                        w.ccr2().bits(duty)),
+                    Channel::_3 => self.0.ccr3.write(|w|
+                        w.ccr3().bits(duty)),
+                    Channel::_4 => self.0.ccr4.write(|w|
+                        w.ccr4().bits(duty)),
                 }
             }
 

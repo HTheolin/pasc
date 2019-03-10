@@ -34,10 +34,6 @@ features = ["stm32f413", "rt"] # 413 is less buggy than 411.
 version = "0.2.2"
 features = ["unproven"]
 
-
-[dependencies.stm32f40x]
-version = "0.6.0"
-
 [dependencies.cast]
 default-features = false
 version = "0.2.2"

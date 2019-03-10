@@ -48,7 +48,7 @@ impl<'a> Adc<'a> {
         let l = adc1.sqr1.read().l().bits();
         if l < sq {
             adc1.sqr1
-                .modify(|_, w| unsafe { w.l().bits(sq.wrapping_sub(1)) });
+                .modify(|_, w| w.l().bits(sq.wrapping_sub(1)) );
         }
     }
 
