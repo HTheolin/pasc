@@ -28,7 +28,7 @@ use time::Hertz;
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 
-const FREQUENCY: Hertz = Hertz(1000);
+const FREQUENCY: Hertz = Hertz(4000);
 const ADCFREQUENCY: Hertz = Hertz(1);
 const N: usize = 2;
 // Our error type
@@ -51,8 +51,9 @@ const APP: () = {
         let dma2 = device.DMA2;
         let adc1 = device.ADC1;
         let tim2 = device.TIM2;
-
-
+        let tim1 = device.TIM1;
+        let tim3 = device.TIM3;
+        let tim4 = device.TIM4;
         let mut pwm = pwm::Pwm(&tim2);
 
         let c = &Channel::_1;
@@ -65,11 +66,11 @@ const APP: () = {
             &device.GPIOC,
             &rcc,
         );
-        pwm.set_duty(*c, pwm.get_max_duty() / 16);
+        pwm.set_duty(*c, pwm.get_max_duty() / 2);
         pwm.enable(*c);
 
         let c2 = &Channel::_2;
-        let mut pwm2 = pwm::Pwm(&tim2);
+        let mut pwm2 = pwm::Pwm(&tim1);
         pwm2.init(
             ADCFREQUENCY.invert(),
             *c2,
@@ -80,7 +81,7 @@ const APP: () = {
             &rcc,
         );
         
-        let adc = adc::Adc(&adc1);
+        let adc = adc::Adc(&adc1, &tim1);
 
         adc.init(&dma2, &rcc);
         adc.enable_input(adc::AdcChannel::_0, 1, &device.GPIOA, &device.GPIOB, &device.GPIOC);

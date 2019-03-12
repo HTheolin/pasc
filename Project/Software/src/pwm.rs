@@ -389,3 +389,63 @@ impl_Pwm!(TIM3, apb1);
 impl_halPwm!(TIM3, apb1);
 impl_Pwm!(TIM4, apb1);
 impl_halPwm!(TIM4, apb1);
+
+
+// TIM1 is 16 bit instead of 32
+impl<'a> _hal::Pwm for Pwm<'a, TIM1> {
+    type Channel = Channel;
+    type Time = apb2::Ticks;
+    type Duty = u16;
+
+    fn disable(&mut self, channel: Channel) {
+        match channel {
+            Channel::_1 => self.0.ccer.modify(|_, w| w.cc1e().clear_bit()),
+            Channel::_2 => self.0.ccer.modify(|_, w| w.cc2e().clear_bit()),
+            Channel::_3 => self.0.ccer.modify(|_, w| w.cc3e().clear_bit()),
+            Channel::_4 => self.0.ccer.modify(|_, w| w.cc4e().clear_bit()),
+        }
+    }
+
+    fn enable(&mut self, channel: Channel) {
+        self.0.bdtr.modify(|_, w|  w.moe().set_bit());
+        match channel {
+            Channel::_1 => self.0.ccer.modify(|_, w| w.cc1e().set_bit()),
+            Channel::_2 => self.0.ccer.modify(|_, w| w.cc2e().set_bit()),
+            Channel::_3 => self.0.ccer.modify(|_, w| w.cc3e().set_bit()),
+            Channel::_4 => self.0.ccer.modify(|_, w| w.cc4e().set_bit()),
+        }
+    }
+
+    fn get_duty(&self, channel: Channel) -> u16 {
+        match channel {
+            Channel::_1 => self.0.ccr1.read().ccr1().bits(),
+            Channel::_2 => self.0.ccr2.read().ccr2().bits(),
+            Channel::_3 => self.0.ccr3.read().ccr3().bits(),
+            Channel::_4 => self.0.ccr4.read().ccr4().bits(),
+        }
+    }
+
+    fn get_max_duty(&self) -> u16 {
+        self.0.arr.read().arr().bits()
+    }
+
+    fn get_period(&self) -> apb2::Ticks {
+        apb2::Ticks(u32(self.0.psc.read().bits() * self.0.arr.read().bits()))
+    }
+
+    fn set_duty(&mut self, channel: Channel, duty: u16) {
+        match channel {
+            Channel::_1 => self.0.ccr1.write(|w| unsafe { w.ccr1().bits(duty) }),
+            Channel::_2 => self.0.ccr2.write(|w| unsafe { w.ccr2().bits(duty) }),
+            Channel::_3 => self.0.ccr3.write(|w| unsafe { w.ccr3().bits(duty) }),
+            Channel::_4 => self.0.ccr4.write(|w| unsafe { w.ccr4().bits(duty) }),
+        }
+    }
+
+    fn set_period<P>(&mut self, period: P)
+    where
+        P: Into<apb2::Ticks>,
+    {
+        self._set_period(period.into())
+    }
+}
