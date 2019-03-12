@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Cortex Debug",
             "cwd": "${workspaceRoot}",
@@ -19,6 +20,35 @@
             "name": "software (debug) 16Mhz",
             "preLaunchTask": "cargo build",
             "executable": "./target/thumbv7em-none-eabihf/debug/Software",
+            "configFiles": [
+                "interface/stlink-v2-1.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "postLaunchCommands": [
+                "monitor reset halt"
+            ],
+            "swoConfig": {
+                "enabled": true,
+                "cpuFrequency": 16000000,
+                "swoFrequency": 2000000, // you may try 1000000 if not working
+                "source": "probe",
+                "decoders": [
+                    {
+                        "type": "console",
+                        "label": "ITM",
+                        "port": 0
+                    }
+                ]
+            },
+            "cwd": "${workspaceRoot}"
+        },
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "name": "software (release) 16Mhz",
+            "preLaunchTask": "cargo build --release",
+            "executable": "./target/thumbv7em-none-eabihf/release/Software",
             "configFiles": [
                 "interface/stlink-v2-1.cfg",
                 "target/stm32f4x.cfg"

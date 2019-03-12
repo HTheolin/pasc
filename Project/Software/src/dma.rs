@@ -52,11 +52,11 @@ pub struct Dma2Stream0 {
 /// Buffer to be used with a certain DMA `STREAM`
 // NOTE(packed) workaround for rust-lang/rust#41315
 #[repr(packed)]
-pub struct Buffer<T, STREAM> {
+pub struct Buffer<'a, T: 'a, STREAM> {
     data: UnsafeCell<T>,
     flag: Cell<BorrowFlag>,
     state: Cell<State>,
-    _marker: PhantomData<STREAM>,
+    _marker: PhantomData<&'a STREAM>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -126,7 +126,7 @@ impl<'a, T> Drop for RefMut<'a, T> {
     }
 }
 
-impl<T, STREAM> Buffer<T, STREAM> {
+impl<'a, T, STREAM> Buffer<'a, T, STREAM> {
     /// Creates a new buffer
     pub const fn new(data: T) -> Self {
         Buffer {
@@ -211,7 +211,7 @@ impl<T, STREAM> Buffer<T, STREAM> {
 }
 
 // FIXME these `release` methods probably want some of sort of barrier
-impl<T> Buffer<T, Dma1Stream2> {
+impl<'a, T> Buffer<'a, T, Dma1Stream2> {
     /// Waits until the DMA releases this buffer
     pub fn release(&self, dma1: &DMA1) -> nb::Result<(), Error> {
         let state = self.state.get();
@@ -233,7 +233,7 @@ impl<T> Buffer<T, Dma1Stream2> {
     }
 }
 
-impl<T> Buffer<T, Dma1Stream4> {
+impl<'a, T> Buffer<'a, T, Dma1Stream4> {
     /// Waits until the DMA releases this buffer
     pub fn release(&self, dma1: &DMA1) -> nb::Result<(), Error> {
         let state = self.state.get();
@@ -255,7 +255,7 @@ impl<T> Buffer<T, Dma1Stream4> {
     }
 }
 
-impl<T> Buffer<T, Dma1Stream5> {
+impl<'a, T> Buffer<'a, T, Dma1Stream5> {
     /// Waits until the DMA releases this buffer
     pub fn release(&self, dma1: &DMA1) -> nb::Result<(), Error> {
         let state = self.state.get();
@@ -277,7 +277,7 @@ impl<T> Buffer<T, Dma1Stream5> {
     }
 }
 
-impl<T> Buffer<T, Dma1Stream6> {
+impl<'a, T> Buffer<'a, T, Dma1Stream6> {
     /// Waits until the DMA releases this buffer
     pub fn release(&self, dma1: &DMA1) -> nb::Result<(), Error> {
         let state = self.state.get();
@@ -299,7 +299,7 @@ impl<T> Buffer<T, Dma1Stream6> {
     }
 }
 
-impl<T> Buffer<T, Dma2Stream0> {
+impl<'a, T> Buffer<'a, T, Dma2Stream0> {
     /// Waits until the DMA releases this buffer
     pub fn release(&self, dma2: &DMA2) -> nb::Result<(), Error> {
         let state = self.state.get();
@@ -322,14 +322,14 @@ impl<T> Buffer<T, Dma2Stream0> {
 }
 
 /// A circular buffer associated to a DMA `STREAM`
-pub struct CircBuffer<B, STREAM> {
-    _marker: PhantomData<STREAM>,
+pub struct CircBuffer<'a, B: 'a, STREAM> {
+    _marker: PhantomData<&'a STREAM>,
     buffer: UnsafeCell<[B; 2]>,
     state: Cell<CircState>,
 }
 
 #[allow(dead_code)]
-impl<B, STREAM> CircBuffer<B, STREAM> {
+impl<'a, B, STREAM> CircBuffer<'a, B, STREAM> {
     pub(crate) fn lock(&self) -> &[B; 2] {
         assert_eq!(self.state.get(), CircState::Free);
 
@@ -348,7 +348,7 @@ enum CircState {
     /// The DMA is mutating the second half of the buffer
     MutatingSecondHalf,
 }
-impl<B, STREAM> CircBuffer<B, STREAM> {
+impl<'a, B, STREAM> CircBuffer<'a, B, STREAM> {
     /// Constructs a circular buffer from two halves
     pub const fn new(buffer: [B; 2]) -> Self {
         CircBuffer {
@@ -359,7 +359,7 @@ impl<B, STREAM> CircBuffer<B, STREAM> {
     }
 }
 
-impl<B> CircBuffer<B, Dma1Stream1> {
+impl<'a, B> CircBuffer<'a, B, Dma1Stream1> {
     /// Yields read access to the half of the circular buffer that's not
     /// currently being mutated by the DMA
     pub fn read<R, F>(&self, dma1: &DMA1, f: F) -> nb::Result<R, Error>
@@ -416,7 +416,7 @@ impl<B> CircBuffer<B, Dma1Stream1> {
     }
 }
 
-impl<B> CircBuffer<B, Dma2Stream0> {
+impl<'a, B> CircBuffer<'a, B, Dma2Stream0> {
     /// Yields read access to the half of the circular buffer that's not
     /// currently being mutated by the DMA
     pub fn read<R, F>(&self, dma2: &DMA2, f: F) -> nb::Result<R, Error>

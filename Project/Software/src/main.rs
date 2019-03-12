@@ -13,8 +13,7 @@ use cortex_m::{asm, iprintln};
 
 extern crate stm32f4xx_hal as hal;
 use crate::hal::prelude::*;
-use hal::stm32::{ITM};
-use hal::gpio::{Analog, gpioa::PA1};
+use hal::stm32::{ITM, DMA2};
 
 use rtfm::{app, Instant};
 
@@ -23,12 +22,15 @@ mod pwm;
 mod frequency;
 mod time;
 mod dma;
+mod channel;
 
-use pwm::Channel;
 use time::Hertz;
+use channel::Channel;
+use dma::{CircBuffer, Dma2Stream0};
 
 const FREQUENCY: Hertz = Hertz(1000);
-
+const ADCFREQUENCY: Hertz = Hertz(1);
+const N: usize = 2;
 // Our error type
 #[derive(Debug)]
 pub enum Error {
@@ -39,17 +41,17 @@ pub enum Error {
 
 #[app(device = hal::stm32)]
 const APP: () = {
-    static mut PA1: PA1<Analog> = ();
     static mut ITM: ITM = ();
-    
-    #[init(schedule = [trace])]
+    static mut DMA2: DMA2 = ();
+    // static mut ADC: adc::Adc = ();
+    static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
+    #[init(schedule = [read_adc], resources = [BUFFER])]
     fn init() {
         let rcc = device.RCC;
         let dma2 = device.DMA2;
         let adc1 = device.ADC1;
         let tim2 = device.TIM2;
 
-        let adc = adc::Adc(&adc1);
 
         let mut pwm = pwm::Pwm(&tim2);
 
@@ -66,18 +68,32 @@ const APP: () = {
         pwm.set_duty(*c, pwm.get_max_duty() / 16);
         pwm.enable(*c);
 
+        let c2 = &Channel::_2;
+        let mut pwm2 = pwm::Pwm(&tim2);
+        pwm2.init(
+            ADCFREQUENCY.invert(),
+            *c2,
+            None,
+            &device.GPIOA,
+            &device.GPIOB,
+            &device.GPIOC,
+            &rcc,
+        );
+        
+        let adc = adc::Adc(&adc1);
+
         adc.init(&dma2, &rcc);
-        adc.enable_input(adc::AdcChannel::_1, 1);
+        adc.enable_input(adc::AdcChannel::_0, 1, &device.GPIOA, &device.GPIOB, &device.GPIOC);
+        adc.enable_input(adc::AdcChannel::_1, 2, &device.GPIOA, &device.GPIOB, &device.GPIOC);
         adc.enable();
-
+        adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
        
-        let gpioa = device.GPIOA.split();
-        let pa1 = gpioa.pa1.into_analog();
-
-        PA1 = pa1;
+        schedule.read_adc(Instant::now() + (12_000_000).cycles()).unwrap();
         
         ITM = core.ITM;
-
+        DMA2 = dma2;
+        
+        // ADC = adc;
     }
 
     #[idle()]
@@ -96,9 +112,40 @@ const APP: () = {
         schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
     }
 
-
+    //Todo, implement this to trigger on interrupt when buffer is readable or on adc conversion.
+    #[task(resources = [ITM, BUFFER, DMA2], schedule = [read_adc])]
+    fn read_adc() {
+        let stim = &mut resources.ITM.stim[0];
+        match resources.BUFFER.read(resources.DMA2, |x| {
+                let buf: [u16; N] = x.clone();
+                buf
+            }) {
+                Err(_) => {
+                    iprintln!
+                    (stim, "Error reading buffer");
+                },
+                Ok(b) => {
+                    iprintln!(stim, "Temp = {}, Pulse = {}", b[0], b[1]);
+                }
+            }
+        schedule.read_adc(Instant::now() + (12_000_000).cycles()).unwrap();
+    }
     // Set of interrupt vectors, free to use for RTFM tasks
     // 1 per priority level suffices
+
+    // #[interrupt]
+    // fn ADC() {
+    //     let stim = &mut resources.ITM.stim[0];
+    //     match resources.BUFFER.read(resources.DMA2, |x| {
+    //             let buf: [u16; N] = x.clone();
+    //             buf
+    //         }) {
+    //             Err(_) => cortex_m::asm::bkpt(),
+    //             Ok(b) => {
+    //                 iprintln!(stim, "{}, {}, {}, {}, {}, {}", b[0], b[1], b[2], b[3], b[4], b[5]);
+    //             }
+    //         }
+    // }
     extern "C" {
         fn EXTI0();
     }

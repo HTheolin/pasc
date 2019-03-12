@@ -10,19 +10,7 @@ use cast::{u16, u32};
 
 use crate::dma::{self, Buffer, Dma1Stream2};
 use crate::frequency::*;
-/// Channel associated to a timer
-#[derive(Clone, Copy, Debug)]
-pub enum Channel {
-    /// TxC1
-    _1,
-    /// TxC2
-    _2,
-    /// TxC3
-    _3,
-    /// TxC4
-    _4,
-}
-
+use crate::channel::Channel;
 /// PWM driver
 pub struct Pwm<'a, T>(pub &'a T)
 where
@@ -74,7 +62,6 @@ macro_rules! impl_Pwm {
                 } else if tim.type_id() == TypeId::of::<TIM4>() {
                     rcc.apb1enr.modify(|_, w| w.tim4en().set_bit());
                 }
-
 
                 rcc.ahb1enr.modify(|_, w| {
                     if tim.type_id() == TypeId::of::<TIM1>() {
