@@ -1,36 +1,33 @@
-use hal::stm32::{SYSCFG, EXTI, GPIOC, GPIOB};
+use hal::stm32::{SYSCFG, EXTI, GPIOB};
 
-use hal::gpio::{ExtiPin, Edge, GpioExt, Input, Floating, PullDown};
+use hal::gpio::{ExtiPin, Edge, Input, Floating, PullDown};
 use hal::gpio::gpioc::{PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
 pub struct Button<T>(pub T);
 
 macro_rules! impl_Button {
-    ($GPIOX:ident, $PXX:ident, $pxx:ident) => {
+    ($GPIOX:ident, $PXX:ident) => {
         impl<'a> Button<$PXX<Input<Floating>>>
         {
-            pub fn init(self, syscfg: &mut SYSCFG, exti: &mut EXTI) -> $PXX<Input<PullDown>> {
+            pub fn init(self, syscfg: &mut SYSCFG, exti: &mut EXTI, trigger: Edge) -> $PXX<Input<PullDown>> {
                 
                 let p_xx = self.0;
                 let mut p_xx  = p_xx.into_pull_down_input();
-                
                 p_xx.make_interrupt_source(syscfg);
-                p_xx.trigger_on_edge(exti, Edge::FALLING);
+                p_xx.trigger_on_edge(exti, trigger);
                 p_xx.enable_interrupt(exti);
+                
                 return p_xx;
-            }
-            pub fn clear_interrupt(mut self, exti: &mut EXTI){
-                self.0.clear_interrupt_pending_bit(exti)
             }
         }
     }
 } 
-impl_Button!(GPIOC, PC7, pc7);
-impl_Button!(GPIOC, PC8, pc8);
-impl_Button!(GPIOC, PC9, pc9);
-impl_Button!(GPIOB, PB0, pb0);
-impl_Button!(GPIOB, PB1, pb1);
-impl_Button!(GPIOB, PB2, pb2);
+impl_Button!(GPIOC, PC7);
+impl_Button!(GPIOC, PC8);
+impl_Button!(GPIOC, PC9);
+impl_Button!(GPIOB, PB0);
+impl_Button!(GPIOB, PB1);
+impl_Button!(GPIOB, PB2);
 
 
 
