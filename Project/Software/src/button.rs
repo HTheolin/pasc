@@ -1,4 +1,4 @@
-use hal::stm32::{SYSCFG, EXTI, GPIOB};
+use hal::stm32::{SYSCFG, EXTI};
 
 use hal::gpio::{ExtiPin, Edge, Input, Floating, PullDown};
 use hal::gpio::gpioc::{PC7, PC8, PC9};

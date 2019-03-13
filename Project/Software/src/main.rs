@@ -11,6 +11,7 @@ extern crate panic_halt;
 
 use cortex_m::{asm, iprintln};
 
+extern crate embedded_hal;
 extern crate stm32f4xx_hal as hal;
 use crate::hal::prelude::*;
 use hal::stm32::{ITM, DMA2, EXTI};
@@ -26,6 +27,8 @@ mod time;
 mod dma;
 mod channel;
 mod button;
+mod lcd;
+mod spi;
 
 use time::Hertz;
 use channel::Channel;
