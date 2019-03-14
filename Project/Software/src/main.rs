@@ -13,12 +13,17 @@ use cortex_m::{asm, iprintln};
 
 extern crate embedded_hal;
 extern crate stm32f4xx_hal as hal;
+
+#[macro_use(block)]
+extern crate nb;
+
 use crate::hal::prelude::*;
 use hal::stm32::{ITM, DMA2, EXTI};
 use hal::gpio::gpioc::{PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
 use hal::gpio::{Input, PullDown, ExtiPin, Edge};
 use rtfm::{app, Instant};
+use stm32f4::stm32f413;
 
 mod adc;
 mod pwm;
@@ -29,10 +34,16 @@ mod channel;
 mod button;
 mod lcd;
 mod spi;
+mod pcd8544;
+mod pcd8544_gpio;
+mod pcd8544_spi;
+mod demo;
+mod font;
 
 use time::Hertz;
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
+use lcd::Lcd;
 //use button::{BUTTON, PB0};
 const FREQUENCY: Hertz = Hertz(100);
 const ADCFREQUENCY: Hertz = Hertz(8);
@@ -50,10 +61,10 @@ const APP: () = {
     static mut ITM: ITM = ();
     static mut DMA2: DMA2 = ();
     static mut EXTI: EXTI = ();
-    static mut PC7: PC7<Input<PullDown>>  = ();
-    static mut PC8: PC8<Input<PullDown>>  = ();
-    static mut PC9: PC9<Input<PullDown>>  = ();
-
+    // static mut PC7: PC7<Input<PullDown>>  = ();
+    // static mut PC8: PC8<Input<PullDown>>  = ();
+    // static mut PC9: PC9<Input<PullDown>>  = ();
+    //static mut LCD: Lcd = ();
     // static mut PB0: PB0<Input<PullDown>>  = ();
     // static mut PB1: PB1<Input<PullDown>>  = ();
     // static mut PB0: PB2<Input<PullDown>>  = ();
@@ -69,6 +80,9 @@ const APP: () = {
         let tim2 = device.TIM2;
         let mut exti = device.EXTI;
         let mut syscfg = device.SYSCFG;
+
+        let c = stm32f413::CorePeripherals::take().unwrap();
+        let syst = c.SYST;
 
         // //Enable pwm for driving the piezo speaker, tim2 channel 1 = PA15
         // let mut pwm = pwm::Pwm(&tim2);
@@ -105,27 +119,30 @@ const APP: () = {
         adc.enable_input(adc::AdcChannel::_1, 2, &device.GPIOA, &device.GPIOB, &device.GPIOC);
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
-       
+
+
+        let pcd8544 = lcd::init(syst, device.GPIOA, device.GPIOB, device.GPIOC);
+
         //button::init(&device.GPIOB, &rcc, &device.SYSCFG, &device.EXTI);
         rcc.apb2enr.modify(|_, w| w.syscfgen().set_bit());
 
-        let gpioc = device.GPIOC.split();
-        let timstart = button::Button(gpioc.pc7).init(&mut syscfg, &mut exti, Edge::FALLING);
-        let timinc = button::Button(gpioc.pc8).init(&mut syscfg, &mut exti, Edge::FALLING);
-        let timres = button::Button(gpioc.pc9).init(&mut syscfg, &mut exti, Edge::FALLING);
+        // let gpioc = device.GPIOC.split();
+        // let timstart = button::Button(gpioc.pc7).init(&mut syscfg, &mut exti, Edge::FALLING);
+        // let timinc = button::Button(gpioc.pc8).init(&mut syscfg, &mut exti, Edge::FALLING);
+        // let timres = button::Button(gpioc.pc9).init(&mut syscfg, &mut exti, Edge::FALLING);
         
         // let gpiob = device.GPIOB.split();
         // let timstart = button::Button(gpiob.pb0).init(&mut syscfg, &mut exti, Edge::FALLING);
         // let timinc = button::Button(gpiob.pb1).init(&mut syscfg, &mut exti, Edge::FALLING);
         // let timres = button::Button(gpiob.pb2).init(&mut syscfg, &mut exti, Edge::FALLING);
- 
-        PC7 = timstart;
-        PC8 = timinc;
-        PC9 = timres;
+        
+        // PC7 = timstart;
+        // PC8 = timinc;
+        // PC9 = timres;
         // PB0 = timstart;
         // BP1 = timinc;
         // BP2 = timres;
-        
+       // LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
         EXTI = exti;
@@ -184,15 +201,15 @@ const APP: () = {
     //     resources.PB0.clear_interrupt_pending_bit(&mut resources.EXTI)
     // }
     
-    #[interrupt(resources = [ITM, EXTI, PC7, PC8, PC9])]
-    fn EXTI9_5() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
-        resources.PC7.clear_interrupt_pending_bit(&mut resources.EXTI);
-        resources.PC8.clear_interrupt_pending_bit(&mut resources.EXTI);
-        resources.PC9.clear_interrupt_pending_bit(&mut resources.EXTI);
+    // #[interrupt(resources = [ITM, EXTI, PC7, PC8, PC9])]
+    // fn EXTI9_5() {
+    //     let stim = &mut resources.ITM.stim[0];
+    //     iprintln!(stim, "Button was clicked!");
+    //     resources.PC7.clear_interrupt_pending_bit(&mut resources.EXTI);
+    //     resources.PC8.clear_interrupt_pending_bit(&mut resources.EXTI);
+    //     resources.PC9.clear_interrupt_pending_bit(&mut resources.EXTI);
 
-    }
+    // }
 
 
     extern "C" {
