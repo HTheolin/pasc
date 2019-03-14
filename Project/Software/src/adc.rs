@@ -11,6 +11,7 @@ use hal::stm32::{ADC1, DMA2, RCC, TIM1, TIM2, TIM3, TIM4, GPIOA, GPIOB, GPIOC};
 
 use cast::u16;
 use hal::prelude::*;
+
 use static_ref::Static;
 
 use crate::dma::{self, CircBuffer, Dma2Stream0};

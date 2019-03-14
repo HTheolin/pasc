@@ -1,6 +1,5 @@
 use core::marker::{Unsize};
 use core::any::{Any, TypeId};
-extern crate embedded_hal as _hal;
 
 // use _hal::prelude::*;
 use hal::stm32::{DMA1, TIM1, TIM2, TIM3, TIM4, RCC, GPIOA, GPIOB, GPIOC};
@@ -317,7 +316,7 @@ macro_rules! impl_Pwm {
 
 macro_rules! impl_halPwm {
     ($TIM:ident, $APB:ident) => {
-        impl<'a> _hal::Pwm for Pwm<'a, $TIM>
+        impl<'a> embedded_hal::Pwm for Pwm<'a, $TIM>
         {
             type Channel = Channel;
             type Duty = u32;
@@ -392,7 +391,7 @@ impl_halPwm!(TIM4, apb1);
 
 
 // TIM1 is 16 bit instead of 32
-impl<'a> _hal::Pwm for Pwm<'a, TIM1> {
+impl<'a> embedded_hal::Pwm for Pwm<'a, TIM1> {
     type Channel = Channel;
     type Time = apb2::Ticks;
     type Duty = u16;
