@@ -1,43 +1,87 @@
-use hal::stm32::{SYSCFG, EXTI};
+use core::any::{Any, TypeId};
 
-use hal::gpio::{ExtiPin, Edge, Input, Floating, PullDown};
-use hal::gpio::gpioc::{PC7, PC8, PC9};
-use hal::gpio::gpiob::{PB0, PB1, PB2};
-pub struct Button<T>(pub T);
+use hal::stm32::{SYSCFG, EXTI, RCC};
+use hal::stm32::{GPIOA, GPIOB, GPIOC};
+use hal::gpio::{Edge};
 
 macro_rules! impl_Button {
-    ($GPIOX:ident, $PXX:ident) => {
-        impl<'a> Button<$PXX<Input<Floating>>>
-        {
-            pub fn init(self, syscfg: &mut SYSCFG, exti: &mut EXTI, trigger: Edge) -> $PXX<Input<PullDown>> {
+    ($GPIOX:ident, $PXX:ident, $BPXX:ident, $exticri: ident, $extix: ident, $moderx: ident, $pupdrx: ident, $mrx:ident, $trx:ident, $prx:ident, $odrx: ident) => {
+        /// Button connected to pin Pxx
+        pub const $BPXX: $PXX = $PXX;
+
+        /// Pin Pxx. There's a button connected to this pin
+        pub struct $PXX;
+
+        impl $PXX {
+
+            pub fn init(&self, gpiox: &$GPIOX, rcc: &RCC, syscfg: &SYSCFG, exti: &EXTI, edge: Edge) {
                 
-                let p_xx = self.0;
-                let mut p_xx  = p_xx.into_pull_down_input();
-                p_xx.make_interrupt_source(syscfg);
-                p_xx.trigger_on_edge(exti, trigger);
-                p_xx.enable_interrupt(exti);
+                if gpiox.type_id() == TypeId::of::<GPIOA>() {
+                   rcc.ahb1enr.modify(|_, w| w.gpioaen().set_bit());
+                } else if gpiox.type_id() == TypeId::of::<GPIOB>() {
+                   rcc.ahb1enr.modify(|_, w| w.gpioben().set_bit());
+                } else if gpiox.type_id() == TypeId::of::<GPIOC>() {
+                    rcc.ahb1enr.modify(|_, w| w.gpiocen().set_bit());
+                }
                 
-                return p_xx;
+                // Configure PC13 as input with pull-downs, RM0368 Table 23
+                gpiox.moder.modify(|_, w| w.$moderx().bits(0) );
+                gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b10) });
+                // System configuration controller clock enable
+                rcc.apb2enr.modify(|_, w| w.syscfgen().set_bit());
+                // Enable external interrupt RM0368 7.2.6
+                if gpiox.type_id() == TypeId::of::<GPIOA>() {
+                    syscfg
+                        .$exticri
+                        .modify(|_, w| unsafe { w.$extix().bits(0b0000) });
+                } else if gpiox.type_id() == TypeId::of::<GPIOB>() {
+                    syscfg
+                        .$exticri
+                        .modify(|_, w| unsafe { w.$extix().bits(0b0001) });
+                } else if gpiox.type_id() == TypeId::of::<GPIOC>() {
+                    syscfg
+                        .$exticri
+                        .modify(|_, w| unsafe { w.$extix().bits(0b0010) });
+                }
+                
+
+                // Interrupt request from line 13 is not masked
+                exti.imr.modify(|_, w| w.$mrx().set_bit());
+
+                match edge {
+                    Edge::RISING => {
+                        exti.rtsr.modify(|_, w| w.$trx().set_bit());
+                        exti.ftsr.modify(|_, w| w.$trx().clear_bit());
+                    },
+                    Edge::FALLING => {
+                        exti.ftsr.modify(|_, w| w.$trx().set_bit());
+                        exti.rtsr.modify(|_, w| w.$trx().clear_bit());
+                    },
+                    Edge::RISING_FALLING => {
+                        exti.ftsr.modify(|_, w| w.$trx().set_bit());
+                        exti.ftsr.modify(|_, w| w.$trx().set_bit());
+                    }
+                }
+
+            }
+            /// True if button is pressed, false otherwise.
+            pub fn is_pressed(&self, gpiox: &$GPIOX) -> bool {
+                gpiox.odr.read().$odrx().bit_is_clear()
+            }
+
+            /// Clear the pending external interrupt line used by the button, PR13
+            pub fn clear_pending(&self, exti: &EXTI) {
+                // RM0368 10.3.6 Pending register
+                exti.pr.modify(|_, w| w.$prx().set_bit());
             }
         }
     }
-} 
-impl_Button!(GPIOC, PC7);
-impl_Button!(GPIOC, PC8);
-impl_Button!(GPIOC, PC9);
-impl_Button!(GPIOB, PB0);
-impl_Button!(GPIOB, PB1);
-impl_Button!(GPIOB, PB2);
-
-
-
-
-// pub fn init(gpioc: GPIOC, pc7: PC7<Input<Floating>>, syscfg: &mut SYSCFG, exti: &mut EXTI){
-                
-//                 let mut pXx = gpioc.split().pc7;
-//                 let mut pXx  = pXx.into_pull_down_input();
-
-//                 pXx.make_interrupt_source(syscfg);
-//                 pXx.trigger_on_edge(exti, Edge::FALLING);
-//                 pXx.enable_interrupt(exti);
-//             }
+}
+ 
+impl_Button!(GPIOC, PC7, BPC7, exticr2, exti7, moder7, pupdr7, mr7, tr7, pr7, odr7);
+impl_Button!(GPIOC, PC8, BPC8, exticr3, exti8, moder8, pupdr8, mr8, tr8, pr8, odr8);
+impl_Button!(GPIOC, PC9, BPC9, exticr3, exti9, moder9, pupdr9, mr9, tr9, pr9, odr9);
+impl_Button!(GPIOB, PB0, BPB0, exticr1, exti0, moder0, pupdr0, mr0, tr0, pr0, odr0);
+impl_Button!(GPIOB, PB1, BPB1, exticr1, exti1, moder1, pupdr1, mr1, tr1, pr1, odr1);
+impl_Button!(GPIOB, PB2, BPB2, exticr1, exti2, moder2, pupdr2, mr2, tr2, pr2, odr2);
+impl_Button!(GPIOC, PC13, BPC13, exticr4, exti13, moder13, pupdr13, mr13, tr13, pr13, odr13);
