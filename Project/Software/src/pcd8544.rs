@@ -11,7 +11,7 @@ pub trait Pcd8544 {
     fn init(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
         self.command(spi, 0x21); // chip active; horizontal addressing mode (V = 0); use extended instruction set (H = 1)
                             // set LCD Vop (contrast), which may require some tweaking:
-        self.command(spi, 0xB8); // try 0xB1 (for 3.3V red SparkFun), 0xB8 (for 3.3V blue SparkFun), 0xBF if your display is too dark, or 0x80 to 0xFF if experimenting
+        self.command(spi, 0xA0); // try 0xB1 (for 3.3V red SparkFun), 0xB8 (for 3.3V blue SparkFun), 0xBF if your display is too dark, or 0x80 to 0xFF if experimenting
         self.command(spi, 0x04); // set temp coefficient
         self.command(spi, 0x14); // LCD bias mode 1:48: try 0x13 or 0x14
 

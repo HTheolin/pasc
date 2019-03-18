@@ -11,7 +11,7 @@ fn empty_buffer() -> Buffer {
 }
 
 pub fn demo(pcd8544: &mut Pcd8544,  spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
-
+    
         for _ in 0..25 {
             pcd8544.draw_buffer(spi, RUST_LOGO);
         }
@@ -24,13 +24,10 @@ pub fn demo(pcd8544: &mut Pcd8544,  spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<h
 
         run_optimized_mandelbrot(pcd8544, spi);
 
-        for _ in 0..25 {
+        for _ in 0..500 {
             pcd8544.draw_buffer(spi, RUST_LOGO);
         }
-
-        run_shader(pcd8544, 0..50, spi, interference);
-    
-}
+    }
 
 pub fn apply_shader<F: Fn(i32, i32, i32) -> bool>(buffer: &mut Buffer, t: i32, f: F) {
     for col in 0..84 {

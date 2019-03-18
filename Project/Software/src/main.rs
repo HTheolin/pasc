@@ -21,7 +21,7 @@ extern crate nb;
 use crate::hal::prelude::*;
 
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
-use hal::gpio::gpioc::{PC3, PC7, PC8, PC9};
+use hal::gpio::gpioc::{PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
 use hal::gpio::{Output, PushPull};
 use hal::gpio::{Input, PullDown, ExtiPin, Edge};
@@ -50,6 +50,7 @@ use dma::{CircBuffer, Dma2Stream0};
 use pcd8544::{Pcd8544, Pcd8544Spi};
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
+const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
 const ADCFREQUENCY: time::Hertz = time::Hertz(8);
 const N: usize = 2;
 // Our error type
@@ -77,13 +78,14 @@ const APP: () = {
     
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     
-    #[init(resources = [BUFFER])]
+    #[init(resources = [BUFFER], schedule = [run_demo])]
     fn init() {
         let rcc = device.RCC;
         let dma2 = device.DMA2;
         let adc1 = device.ADC1;
         let tim1 = device.TIM1;
         let tim2 = device.TIM2;
+        let tim3 = device.TIM3;
         let tim5 = device.TIM5;
         let spi1 = device.SPI1;
         let mut exti = device.EXTI;
@@ -105,6 +107,21 @@ const APP: () = {
         // pwm.set_duty(*c, pwm.get_max_duty() / 2);
         // pwm.enable(*c);
 
+       //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6
+        let mut pwm = pwm::Pwm(&tim3);
+        let c = &Channel::_1;
+        pwm.init(
+            LCDFREQUENCY.invert(),
+            *c,
+            None,
+            &device.GPIOA,
+            &device.GPIOB,
+            &device.GPIOC,
+            &rcc,
+        );
+        pwm.set_duty(*c, pwm.get_max_duty() / 2);
+        pwm.enable(*c);
+
         //Enable ADC converting on adc channel IN_0 (PA0) and IN_1 (PA1), uses pwm to trigger converting and uses DMA2_STREAM0
         //interrupt to print values from the buffer.
         //Todo, possibly enable analog watchdog for adc channel 1 (pulse) to generate interrupt on high values to count pulses.
@@ -123,8 +140,7 @@ const APP: () = {
         adc.init(&dma2, &rcc);
         adc.enable_input(adc::AdcChannel::_0, 1, &device.GPIOA, &device.GPIOB, &device.GPIOC);
         adc.enable_input(adc::AdcChannel::_1, 2, &device.GPIOA, &device.GPIOB, &device.GPIOC);
-        adc.enable();
-        adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
+
 
         let button = button::BPC13;
         button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
@@ -136,18 +152,21 @@ const APP: () = {
         // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+
         let t = hal::time::Hertz(100);
-
-        // let p = hal::stm32::Peripherals::take().unwrap();
-
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.freeze();
         
         let mut timer = Timer::tim5(tim5, t, clocks);
 
-        let (spi, pcd8544) = lcd::init(&mut timer, device.GPIOA, device.GPIOB, device.GPIOC, clocks, spi1);
+        let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, device.GPIOB, device.GPIOC, clocks, spi1);
         
-        // demo::demo(&mut pcd8544);
+        // schedule.run_demo(Instant::now() + 16_000_000.cycles()).unwrap();
+        demo::demo(&mut pcd8544, &mut spi);
+
+        //Enable adc after splash screen!
+        adc.enable();
+        adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
 
         BPC7 = button::BPC7;
         BPC8 = button::BPC8;
@@ -170,6 +189,11 @@ const APP: () = {
         }
     }
 
+    #[task(resources = [LCD, SPI])]
+    fn run_demo() {
+        demo::demo(&mut *resources.LCD, &mut resources.SPI);
+    }
+
     #[task(resources = [ITM], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
@@ -187,8 +211,9 @@ const APP: () = {
             }) {
                 Err(_) => cortex_m::asm::bkpt(),
                 Ok(b) => {
-                    resources.LCD.print_char(resources.SPI, 'o' as u8);
-                    resources.LCD.print_char(resources.SPI, 'k' as u8);
+                    resources.LCD.clear(&mut resources.SPI);
+                    resources.LCD.print_char(&mut resources.SPI, 'o' as u8);
+                    resources.LCD.print_char(&mut resources.SPI, 'k' as u8);
                     iprintln!(stim, "{}, {}", b[0], b[1]);
                 }
             }
@@ -218,13 +243,15 @@ const APP: () = {
     //     resources.BPB0.clear_pending(&mut resources.EXTI)
     // }
     
-    #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9])]
+    #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD, SPI])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
         iprintln!(stim, "Button was clicked!");
         resources.BPC7.clear_pending(&mut resources.EXTI);
         resources.BPC8.clear_pending(&mut resources.EXTI);
         resources.BPC9.clear_pending(&mut resources.EXTI);
+        resources.LCD.set_position(&mut resources.SPI, 1, 2);
+        resources.LCD.print(&mut resources.SPI, "Button was clicked!");
     }
 
 
