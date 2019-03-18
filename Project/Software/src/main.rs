@@ -18,17 +18,21 @@ extern crate stm32f4xx_hal as hal;
 #[macro_use(block)]
 extern crate nb;
 
+use embedded_hal::blocking::i2c::{WriteRead};
 use crate::hal::prelude::*;
 
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
 use hal::gpio::gpioc::{PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
-use hal::gpio::{Output, PushPull};
+use hal::gpio::{Output, PushPull, Speed};
 use hal::gpio::{Input, PullDown, ExtiPin, Edge};
-use hal::time::Hertz;
+use hal::time::{Hertz, KiloHertz};
 use hal::spi::Spi;
+use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
-use stm32f4xx_hal::prelude::_embedded_hal_timer_CountDown as CountDown;
+use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
+// use hal::prelude::_embedded_hal_blocking_i2c_WriteRead as WriteRead;
+
 
 use rtfm::{app, Instant};
 
@@ -44,14 +48,19 @@ mod pcd8544;
 mod pcd8544_spi;
 mod demo;
 mod font;
+mod lis3dh;
+mod i2c;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use pcd8544::{Pcd8544, Pcd8544Spi};
+
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
 const ADCFREQUENCY: time::Hertz = time::Hertz(8);
+const I2CFREQUENCY: KiloHertz = KiloHertz(100);
+const SPIFREQUENCY: Hertz = Hertz(100);
 const N: usize = 2;
 // Our error type
 #[derive(Debug)]
@@ -70,15 +79,16 @@ const APP: () = {
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
     static mut BPC9: button::PC9  = ();
+    // static mut I2C1: I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<hal::gpio::AF4>>, hal::gpio::gpiob::PB7<hal::gpio::Alternate<hal::gpio::AF4>>)> = ();
     static mut SPI: Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)> = ();
     static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
-    // static mut BPB0: button::PB0  = ();
+     // static mut BPB0: button::PB0  = ();
     // static mut BPB1: button::PB1  = ();
     // static mut BPB0: button::PB2  = ();
     
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     
-    #[init(resources = [BUFFER], schedule = [run_demo])]
+    #[init(resources = [BUFFER], schedule = [trace])]
     fn init() {
         let rcc = device.RCC;
         let dma2 = device.DMA2;
@@ -88,9 +98,9 @@ const APP: () = {
         let tim3 = device.TIM3;
         let tim5 = device.TIM5;
         let spi1 = device.SPI1;
-        let mut exti = device.EXTI;
-        let mut syscfg = device.SYSCFG;
-        // let i2c = device.I2C1;
+        let exti = device.EXTI;
+        let syscfg = device.SYSCFG;
+        let i2c1 = device.I2C1;
 
         // //Enable pwm for driving the piezo speaker, tim2 channel 1 = PA15
         // let mut pwm = pwm::Pwm(&tim2);
@@ -149,17 +159,67 @@ const APP: () = {
         button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
         button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
 
-        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        // // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
 
-        let t = hal::time::Hertz(100);
-        let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.freeze();
         
-        let mut timer = Timer::tim5(tim5, t, clocks);
 
-        let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, device.GPIOB, device.GPIOC, clocks, spi1);
+        // Init the I2C peripheral
+        // let i2c = i2c::I2c(&i2c1);
+        // i2c.init(&device.GPIOA, &device.GPIOB, &rcc);
+        // i2c.enable();
+
+        // i2c.start(lis3dh::ADDRESS);
+        // let lis3dh = lis3dh::Lis3dh::new(&i2c, lis3dh::ADDRESS);
+        // let stim = &mut core.ITM.stim[0];
+        // let mut data = [0b0111];
+        // let res = i2c.write(lis3dh::ADDRESS, &mut [lis3dh::LIS3DH_REG_CTRL1])
+        //                             .map_err(lis3dh::Error::I2C)
+        //                             .and(Ok(data[0]));
+
+
+
+
+        // let pinscl = gpiob.pb6.into_alternate_af4();
+        // let pinscl = pinscl.set_speed(Speed::Low);
+        // let pinscl = pinscl.set_open_drain();
+        // let pinscl = pinscl.internal_pull_up(false);
+        // let pinsda = gpiob.pb7.into_alternate_af4();
+        // let pinsda = pinsda.set_speed(Speed::Low);
+        // let pinsda = pinsda.set_open_drain();
+        // let pinsda = pinsda.internal_pull_up(false);
+
+        
+  
+
+        // let mut i2c = I2c::i2c1(
+        //     i2c1,
+        //     (pinscl, pinsda),
+        //     I2CFREQUENCY,
+        //     clocks,
+        // );
+        lis3dh::init(&i2c1, &device.GPIOB, &rcc);
+        lis3dh::enable(&i2c1);
+
+        let stim = &mut core.ITM.stim[0];
+        iprintln!(stim, "Address: {}, {}", lis3dh::ADDRESS, lis3dh::LIS3DH_REG_WHOAMI);
+        let mut data = [0];
+        // let res = i2c.write_read(lis3dh::ADDRESS, &[lis3dh::LIS3DH_REG_WHOAMI], &mut data)
+        //                             .map_err(lis3dh::Error::I2C)
+        //                             .and(Ok(data[0]));
+        let mut data = 0x07;
+        // let res = i2c.write(lis3dh::ADDRESS, &[lis3dh::LIS3DH_REG_CTRL1, data]);
+        // iprintln!(stim, "I am: {}", data[0]);
+
+        let rcc = rcc.constrain();
+        // let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.freeze();
+
+        let gpiob = device.GPIOB.split();
+        let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
+
+        let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, gpiob.pb0.into_push_pull_output(), device.GPIOC, clocks, spi1);
         
         // schedule.run_demo(Instant::now() + 16_000_000.cycles()).unwrap();
         demo::demo(&mut pcd8544, &mut spi);
@@ -167,13 +227,15 @@ const APP: () = {
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
-
+        
+        schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
         BPC7 = button::BPC7;
         BPC8 = button::BPC8;
         BPC9 = button::BPC9;
         // PB0 = timstart;
         // BP1 = timinc;
         // BP2 = timres;
+        // I2C1 = i2c;
         SPI = spi;
         LCD = pcd8544;
         ITM = core.ITM;
@@ -189,22 +251,19 @@ const APP: () = {
         }
     }
 
-    #[task(resources = [LCD, SPI])]
-    fn run_demo() {
-        demo::demo(&mut *resources.LCD, &mut resources.SPI);
-    }
-
     #[task(resources = [ITM], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Det fungerar!");
 
         schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
     }
 
     #[interrupt(resources = [ITM, BUFFER, DMA2, LCD, SPI])]
     fn DMA2_STREAM0() {
-        let stim = &mut resources.ITM.stim[0];
+        resources.ITM.lock(|itm| {
+            let stim = &mut itm.stim[0];
+        });
+        
         match resources.BUFFER.read(resources.DMA2, |x| {
                 let buf: [u16; N] = x.clone();
                 buf
@@ -214,7 +273,7 @@ const APP: () = {
                     resources.LCD.clear(&mut resources.SPI);
                     resources.LCD.print_char(&mut resources.SPI, 'o' as u8);
                     resources.LCD.print_char(&mut resources.SPI, 'k' as u8);
-                    iprintln!(stim, "{}, {}", b[0], b[1]);
+                    // iprintln!(stim, "{}, {}", b[0], b[1]);
                 }
             }
     }
@@ -245,8 +304,11 @@ const APP: () = {
     
     #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD, SPI])]
     fn EXTI9_5() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
+        resources.ITM.lock(|itm| {
+            let stim = &mut itm.stim[0];
+            iprintln!(stim, "Button was clicked!");
+        });
+        
         resources.BPC7.clear_pending(&mut resources.EXTI);
         resources.BPC8.clear_pending(&mut resources.EXTI);
         resources.BPC9.clear_pending(&mut resources.EXTI);
@@ -255,14 +317,18 @@ const APP: () = {
     }
 
 
-    #[interrupt(resources = [ITM, EXTI, BPC13])]
-    fn EXTI15_10() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
-        resources.BPC13.clear_pending(&mut resources.EXTI);
-    }
+    // #[interrupt(resources = [ITM, EXTI, BPC13])]
+    // fn EXTI15_10() {
+    //     resources.ITM.lock(|itm| {
+    //         let stim = &mut itm.stim[0];
+    //         iprintln!(stim, "Button was clicked!");
+    //     });
+        
+    //     resources.BPC13.clear_pending(&mut resources.EXTI);
+    // }
 
     extern "C" {
         fn EXTI1();
+        fn EXTI2();
     }
 };
