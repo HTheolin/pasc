@@ -1,5 +1,7 @@
 use crate::pcd8544::Pcd8544;
 
+use hal::spi::{Spi, Pins};
+use hal::stm32::SPI1;
 type Buffer = [u8; 504];
 
 static RUST_LOGO: &'static Buffer = include_bytes!("logo.bin");
@@ -8,27 +10,24 @@ fn empty_buffer() -> Buffer {
     [0u8; 504]
 }
 
-pub fn demo(pcd8544: &mut Pcd8544) {
-    loop {
+pub fn demo(pcd8544: &mut Pcd8544,  spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
+    
         for _ in 0..25 {
-            pcd8544.draw_buffer(RUST_LOGO);
+            pcd8544.draw_buffer(spi, RUST_LOGO);
         }
 
-        run_shader(pcd8544, 0..75, deform_1_z);
+        run_shader(pcd8544, 0..75, spi, deform_1_z);
 
         for _ in 0..25 {
-            pcd8544.draw_buffer(RUST_LOGO);
+            pcd8544.draw_buffer(spi, RUST_LOGO);
         }
 
-        run_optimized_mandelbrot(pcd8544);
+        run_optimized_mandelbrot(pcd8544, spi);
 
-        for _ in 0..25 {
-            pcd8544.draw_buffer(RUST_LOGO);
+        for _ in 0..500 {
+            pcd8544.draw_buffer(spi, RUST_LOGO);
         }
-
-        run_shader(pcd8544, 0..50, interference);
     }
-}
 
 pub fn apply_shader<F: Fn(i32, i32, i32) -> bool>(buffer: &mut Buffer, t: i32, f: F) {
     for col in 0..84 {
@@ -47,17 +46,18 @@ pub fn apply_shader<F: Fn(i32, i32, i32) -> bool>(buffer: &mut Buffer, t: i32, f
 pub fn run_shader<F: Fn(i32, i32, i32) -> bool>(
     pcd8544: &mut Pcd8544,
     t_range: ::core::ops::Range<i32>,
+    spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>,
     f: F,
 ) -> Buffer {
     let mut buffer = empty_buffer();
     for t in t_range {
         apply_shader(&mut buffer, t, &f);
-        pcd8544.draw_buffer(&buffer);
+        pcd8544.draw_buffer(spi, &buffer);
     }
     buffer
 }
 
-pub fn run_optimized_mandelbrot(pcd8544: &mut Pcd8544) {
+pub fn run_optimized_mandelbrot(pcd8544: &mut Pcd8544, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
     let mut buffer = empty_buffer();
     for t in 0..32 {
         for col in 0..84 {
@@ -85,7 +85,7 @@ pub fn run_optimized_mandelbrot(pcd8544: &mut Pcd8544) {
                 buffer[6 * col + row] = byte;
             }
         }
-        pcd8544.draw_buffer(&buffer);
+        pcd8544.draw_buffer(spi, &buffer);
     }
 }
 
