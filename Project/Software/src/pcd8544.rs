@@ -1,14 +1,16 @@
 use crate::pcd8544_spi;
 use crate::font;
-use hal::spi::{Spi, Pins};
+use hal::spi::{Spi, PinSck, NoMiso, PinMosi};
 use hal::stm32::SPI1;
+use hal::gpio::{Alternate, AF5};
+use hal::gpio::gpioa::{PA5, PA7};
 pub use pcd8544_spi::Pcd8544Spi;
 
 pub trait Pcd8544 {
-    fn command(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, cmd: u8);
-    fn data(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, data: &[u8]);
+    fn command(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, cmd: u8);
+    fn data(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, data: &[u8]);
 
-    fn init(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
+    fn init(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.command(spi, 0x21); // chip active; horizontal addressing mode (V = 0); use extended instruction set (H = 1)
                             // set LCD Vop (contrast), which may require some tweaking:
         self.command(spi, 0xA0); // try 0xB1 (for 3.3V red SparkFun), 0xB8 (for 3.3V blue SparkFun), 0xBF if your display is too dark, or 0x80 to 0xFF if experimenting
@@ -21,20 +23,20 @@ pub trait Pcd8544 {
         self.clear(spi);
     }
 
-    fn print_char(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, c: u8) {
+    fn print_char(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, c: u8) {
         let i = (c as usize) - 0x20;
 
         self.data(spi, &font::ASCII[i]);
         self.data(spi, &[0x00]);
     }
 
-    fn print(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, s: &str) {
+    fn print(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, s: &str) {
         for c in s.bytes() {
             self.print_char(spi, c);
         }
     }
 
-    fn set_position(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, x: u8, y: u8) {
+    fn set_position(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, x: u8, y: u8) {
         assert!(x <= 84);
         assert!(y < 6);
 
@@ -45,7 +47,7 @@ pub trait Pcd8544 {
     // note: data direction is vertical: [1 2 3 4 5 6]
     // 1 3 5
     // 2 4 6
-    fn draw_buffer(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>, buffer: &[u8; 6*84]) {
+    fn draw_buffer(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, buffer: &[u8; 6*84]) {
         self.command(spi, 0x22); // vertical addressing
         self.set_position(spi, 0, 0);
         self.data(spi, buffer);
@@ -53,7 +55,7 @@ pub trait Pcd8544 {
         self.set_position(spi, 0, 0);
     }
 
-    fn clear(&mut self, spi: &mut Spi<SPI1, (hal::gpio::gpioa::PA5<hal::gpio::Alternate<hal::gpio::AF5>>, hal::spi::NoMiso, hal::gpio::gpioa::PA7<hal::gpio::Alternate<hal::gpio::AF5>>)>) {
+    fn clear(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.set_position(spi, 0, 0);
         self.data(spi, &[0u8; 6*84]);
         self.set_position(spi, 0, 0);

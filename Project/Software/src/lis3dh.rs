@@ -1,13 +1,7 @@
 extern crate embedded_hal;
 
 use nb;
-// use hal::blocking::i2c::{WriteRead};
-use hal::stm32::{I2C1, GPIOA, GPIOB, GPIOC, RCC};
-use hal::i2c::I2c;
-use core::ptr;
-use hal::prelude::_embedded_hal_blocking_i2c_WriteRead as WriteRead;
-use hal::prelude::_embedded_hal_blocking_i2c_Write as Write;
-use hal::prelude::_embedded_hal_blocking_i2c_Read as Read;
+use hal::stm32::{I2C1, GPIOB, RCC};
 
 use crate::frequency::*;
 use crate::time::*;
@@ -69,29 +63,6 @@ pub enum I2CError {
 
 pub enum Error<E> {
     I2C(E),
-
-}
-
-pub fn read_u8(i2c: &mut I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<hal::gpio::AF4>>, hal::gpio::gpiob::PB7<hal::gpio::Alternate<hal::gpio::AF4>>)>, 
-                reg: u8) -> Result<u8, hal::i2c::Error> {
-        let mut byte: [u8; 1] = [0; 1];
-
-        match i2c.write_read(ADDRESS, &[reg], &mut byte) {
-            Ok(_) => Ok(byte[0]),
-            Err(e) => Err(e),
-        }
-    }
-
-pub fn read_bytes(i2c: &mut I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<hal::gpio::AF4>>, hal::gpio::gpiob::PB7<hal::gpio::Alternate<hal::gpio::AF4>>)>, 
-                reg: u8, buf: &mut [u8]) -> Result<(), hal::i2c::Error> {
-    i2c.write_read(ADDRESS, &[reg], buf)
-}
-
-pub fn write_u8(i2c: &mut I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<hal::gpio::AF4>>, hal::gpio::gpiob::PB7<hal::gpio::Alternate<hal::gpio::AF4>>)>, 
-                reg: u8, value: u8) -> Result<(), hal::i2c::Error> {
-    i2c.write(ADDRESS, &[reg, value])?;
-
-    Ok(())
 }
 
 pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {
@@ -144,13 +115,13 @@ pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {
     // Use 100_000 Hz baud rate
     // let mut result: u16 = (pclk1_hz / (100_000 * 2)) as u16;
     let result = {
-                let result = (pclk1_hz / (100_000 / 2)) as u16;
-                if result < 1 {
-                    1
-                } else {
-                    result
-                }
-            };
+            let result = (pclk1_hz / (100_000 / 2)) as u16;
+            if result < 1 {
+                1
+            } else {
+                result
+            }
+        };
     // RM0368 18.6.8
     i2c.ccr.modify(|_,w| unsafe {
         w.f_s().clear_bit() // Standard mode I2C
@@ -185,12 +156,6 @@ pub fn start(i2c:  &I2C1) -> Result<(), nb::Error<I2CError> > {
         // If we got NACK and tx empty, use ACK pulling:
         i2c.sr1.modify(|_,w| w.af().clear_bit());
     }
-
-
-    Ok(())
-}
-
-pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
     // Send START condition
     i2c.cr1.modify(|_, w| w.start().set_bit());
     // Wait for repeated start generation
@@ -199,6 +164,11 @@ pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
     if i2c.sr2.read().busy().bit_is_clear() {
         return Err(nb::Error::WouldBlock);
     }
+
+    Ok(())
+}
+
+pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
 
     i2c.dr.write(|w| unsafe { w.bits(u32::from(ADDRESS) << 1) });
     
@@ -232,14 +202,6 @@ pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
 
 /// Read a byte and respond with ACK
 pub fn read_ack(i2c: &I2C1) -> Result<u8, nb::Error<I2CError>> {
-    // Send START condition
-    i2c.cr1.modify(|_, w| w.start().set_bit());
-    // Enable ACK
-    i2c.cr1.modify(|_,w| w.ack().set_bit());
-    // Wait for repeated start generation
-    while i2c.sr1.read().sb().bit_is_clear() {}
-
-    while i2c.sr2.read().busy().bit_is_clear() {}
     
     i2c.dr.write(|w| unsafe { w.bits((u32::from(ADDRESS) << 1) + 1) });
     
@@ -253,6 +215,8 @@ pub fn read_ack(i2c: &I2C1) -> Result<u8, nb::Error<I2CError>> {
     i2c.sr2.read();
     
     while i2c.sr1.read().rx_ne().bit_is_clear() {}
+
+    let sr = i2c.sr1.read();
 
     if sr.ovr().bit_is_set() {
         Err(nb::Error::Other(I2CError::Overrun))
