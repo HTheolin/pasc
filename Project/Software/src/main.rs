@@ -77,9 +77,10 @@ const APP: () = {
     static mut BPC13: button::PC13 = ();
 
     static mut SPI: Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)> = ();
+
+    // Toggle these to change board
     static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
     // static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
-    
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
     static mut BPC9: button::PC9  = ();
