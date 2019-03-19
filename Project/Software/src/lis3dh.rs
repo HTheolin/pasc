@@ -64,6 +64,12 @@ pub enum I2CError {
     /// Bus error
     BusError,
     #[doc(hidden)] _Extensible,
+    NACK,
+}
+
+pub enum Error<E> {
+    I2C(E),
+
 }
 
 pub fn read_u8(i2c: &mut I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<hal::gpio::AF4>>, hal::gpio::gpiob::PB7<hal::gpio::Alternate<hal::gpio::AF4>>)>, 
@@ -88,13 +94,18 @@ pub fn write_u8(i2c: &mut I2c<I2C1, (hal::gpio::gpiob::PB6<hal::gpio::Alternate<
     Ok(())
 }
 
-pub fn init(i2c:  &I2C1, gpiob: &GPIOB, rcc: &RCC) {
+pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {
     // # I2C1
     // - SCL = PB6
     // - SDA = PB7
 
     // Enable I2C1, GPIOB
     rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
+
+    rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
+    rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
+
+
     rcc.ahb1enr.modify(|_, w| w.gpioben().set_bit());
     // DM00102166 - Alternate function, Table 9
     gpiob.afrl.modify(|_, w| 
@@ -131,17 +142,22 @@ pub fn init(i2c:  &I2C1, gpiob: &GPIOB, rcc: &RCC) {
     i2c.cr2.modify(|_,w| unsafe { w.freq().bits(pclk1_mhz as u8) });
 
     // Use 100_000 Hz baud rate
-    let mut result: u16 = (pclk1_hz / (100_000/2)) as u16;
-    if result == 0 {
-        result = 1;
-    }
+    // let mut result: u16 = (pclk1_hz / (100_000 * 2)) as u16;
+    let result = {
+                let result = (pclk1_hz / (100_000 / 2)) as u16;
+                if result < 1 {
+                    1
+                } else {
+                    result
+                }
+            };
     // RM0368 18.6.8
     i2c.ccr.modify(|_,w| unsafe {
         w.f_s().clear_bit() // Standard mode I2C
         .duty().clear_bit() // Fast mode duty cycle: t_low/t_high = 2
         .ccr().bits(result)
     });
-    i2c.trise.modify(|_,w| w.trise().bits((pclk1_mhz+1) as u8));
+    i2c.trise.modify(|_,w| w.trise().bits((pclk1_mhz + 1) as u8));
 }
 
 /// Disables the I2C bus
@@ -169,66 +185,84 @@ pub fn start(i2c:  &I2C1) -> Result<(), nb::Error<I2CError> > {
         // If we got NACK and tx empty, use ACK pulling:
         i2c.sr1.modify(|_,w| w.af().clear_bit());
     }
-    // Enable ACK
-    i2c.cr1.modify(|_,w| w.ack().set_bit());
+
+
+    Ok(())
+}
+
+pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
     // Send START condition
     i2c.cr1.modify(|_, w| w.start().set_bit());
     // Wait for repeated start generation
     while i2c.sr1.read().sb().bit_is_clear() {}
-    unsafe {
-        ptr::write_volatile(&i2c.dr as *const _ as *mut u8, ADDRESS);
+
+    if i2c.sr2.read().busy().bit_is_clear() {
+        return Err(nb::Error::WouldBlock);
     }
+
+    i2c.dr.write(|w| unsafe { w.bits(u32::from(ADDRESS) << 1) });
+    
     // Wait for end of address transmission
     while i2c.sr1.read().addr().bit_is_clear() {
         if i2c.sr1.read().af().bit_is_set() {
             return Err(nb::Error::Other(I2CError::Timeout));
         }
     }
-    Ok(())
 
-}
+    while i2c.sr1.read().tx_e().bit_is_clear() {}
 
-pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
-    if i2c.sr1.read().addr().bit_is_set() {
-        // Writing right after the address byte
-        let _sr2 = i2c.sr2.read().bits();
-    }
-           
+    let b = i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
+
     let sr = i2c.sr1.read();
+
     if sr.ovr().bit_is_set() {
         Err(nb::Error::Other(I2CError::Overrun))
     } else if sr.timeout().bit_is_set() {
         Err(nb::Error::Other(I2CError::Timeout))
     } else if sr.berr().bit_is_set() {
         Err(nb::Error::Other(I2CError::BusError))
-    } else
-    if sr.tx_e().bit_is_set() || sr.btf().bit_is_set() {
-        Ok(unsafe {
-            ptr::write_volatile(&i2c.dr as *const _ as *mut u8, byte)
-        })
+    } else if sr.af().bit_is_set() {
+        Err(nb::Error::Other(I2CError::NACK))
+    } else if sr.btf().bit_is_clear() {
+        Ok(b)
     } else {
         Err(nb::Error::WouldBlock)
-    }
+    } 
 }
 
 /// Read a byte and respond with ACK
 pub fn read_ack(i2c: &I2C1) -> Result<u8, nb::Error<I2CError>> {
-    if i2c.sr1.read().addr().bit_is_set() {
-        // Reading right after the address byte
-        let _sr2 = i2c.sr2.read().bits();
+    // Send START condition
+    i2c.cr1.modify(|_, w| w.start().set_bit());
+    // Enable ACK
+    i2c.cr1.modify(|_,w| w.ack().set_bit());
+    // Wait for repeated start generation
+    while i2c.sr1.read().sb().bit_is_clear() {}
+
+    while i2c.sr2.read().busy().bit_is_clear() {}
+    
+    i2c.dr.write(|w| unsafe { w.bits((u32::from(ADDRESS) << 1) + 1) });
+    
+    // Wait for end of address transmission
+    while i2c.sr1.read().addr().bit_is_clear() {
+        if i2c.sr1.read().af().bit_is_set() {
+            return Err(nb::Error::Other(I2CError::Timeout));
+        }
     }
-    let sr = i2c.sr1.read();
+
+    i2c.sr2.read();
+    
+    while i2c.sr1.read().rx_ne().bit_is_clear() {}
+
     if sr.ovr().bit_is_set() {
         Err(nb::Error::Other(I2CError::Overrun))
     } else if sr.timeout().bit_is_set() {
         Err(nb::Error::Other(I2CError::Timeout))
     } else if sr.berr().bit_is_set() {
         Err(nb::Error::Other(I2CError::BusError))
-    } else
-    if sr.rx_ne().bit_is_set() || sr.btf().bit_is_set() {
-        Ok(unsafe {
-            ptr::read_volatile(&i2c.dr as *const _ as *const u8)
-        })
+    } else if sr.rx_ne().bit_is_set() || sr.btf().bit_is_set() {
+         let value = i2c.dr.read().bits() as u8;
+         Ok(value)
     } else {
         Err(nb::Error::WouldBlock)
     }
@@ -245,7 +279,7 @@ pub fn read_nack(i2c: &I2C1)  -> Result<u8, nb::Error<I2CError>> {
         // Reading right after the address byte
         let _sr2 = i2c.sr2.read().bits();
     }
-    // Send STOP condition
+
     i2c.cr1.modify(|_, w| w.stop().set_bit());
     read_ack(i2c)
 }
@@ -255,10 +289,9 @@ pub fn read_nack(i2c: &I2C1)  -> Result<u8, nb::Error<I2CError>> {
 pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
     // Disable ACK
     i2c.cr1.modify(|_,w|  w.ack().clear_bit());
-    if i2c.sr1.read().addr().bit_is_set() {
-        // Reading right after the address byte
-        let _sr2 = i2c.sr2.read();
-    }
+
+    let _sr2 = i2c.sr2.read();
+    
     if i2c.sr1.read().tx_e().bit_is_clear() && i2c.sr1.read().btf().bit_is_clear() {
         return Err(nb::Error::WouldBlock);
     }
@@ -267,7 +300,7 @@ pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
     Ok(())
 }
 
-pub fn who_am_i(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
+pub fn who_am_i(i2c: &I2C1) -> Result<[u8; RX_BUFFER_SIZE], nb::Error<I2CError>> {
     let mut rx_buffer = [0];
 
     start(i2c);
@@ -290,5 +323,5 @@ pub fn who_am_i(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
             }
         }
     }
-    Ok(())
+    Ok(rx_buffer)
 }
