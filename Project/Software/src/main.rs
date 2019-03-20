@@ -33,7 +33,6 @@ use hal::timer::Timer;
 use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
 // use hal::prelude::_embedded_hal_blocking_i2c_WriteRead as WriteRead;
 
-
 use rtfm::{app, Instant};
 
 mod adc;
