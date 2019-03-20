@@ -12,10 +12,10 @@ pub trait Pcd8544 {
 
     fn init(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.command(spi, 0x21); // chip active; horizontal addressing mode (V = 0); use extended instruction set (H = 1)
-                            // set LCD Vop (contrast), which may require some tweaking:
-        self.command(spi, 0xA0); // try 0xB1 (for 3.3V red SparkFun), 0xB8 (for 3.3V blue SparkFun), 0xBF if your display is too dark, or 0x80 to 0xFF if experimenting
+        // set LCD Vop (contrast), which may require some tweaking:
+        self.command(spi, 0xBF); // 0x80 to 0xFF. 0xA0 works for Henrik PCB, 0xBF is good for Simon PCB.
         self.command(spi, 0x04); // set temp coefficient
-        self.command(spi, 0x14); // LCD bias mode 1:48: try 0x13 or 0x14
+        self.command(spi, 0x13); // LCD bias mode 1:48: try 0x13 or 0x14
 
         self.command(spi, 0x20); // we must send 0x20 before modifying the display control mode
         self.command(spi, 0x0C); // set display control to normal mode: 0x0D for inverse

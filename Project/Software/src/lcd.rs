@@ -76,7 +76,7 @@ pub fn init_alt(timer: &mut Timer<TIM5>, gpioa: GPIOA, gpioc: GPIOC, clocks: Clo
         spi1,
         (sck, miso, mosi),
         spi_mode,
-        4_000_000.hz(),
+        1000000.hz(),
         clocks,
     );
         

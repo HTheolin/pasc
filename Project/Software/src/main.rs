@@ -78,14 +78,14 @@ const APP: () = {
     static mut SPI: Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)> = ();
 
     // Toggle these to change board
-    static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
-    // static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
-    static mut BPC7: button::PC7  = ();
-    static mut BPC8: button::PC8  = ();
-    static mut BPC9: button::PC9  = ();
-    // static mut BPB0: button::PB0  = ();
-    // static mut BPB1: button::PB1  = ();
-    // static mut BPB2: button::PB2  = ();
+    // static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
+    static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
+    // static mut BPC7: button::PC7  = ();
+    // static mut BPC8: button::PC8  = ();
+    // static mut BPC9: button::PC9  = ();
+    static mut BPB0: button::PB0  = ();
+    static mut BPB1: button::PB1  = ();
+    static mut BPB2: button::PB2  = ();
     static mut I2C1: I2C1 = ();
     
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
@@ -118,21 +118,23 @@ const APP: () = {
         // );
         // pwm.set_duty(*c, pwm.get_max_duty() / 2);
         // pwm.enable(*c);
+        let stim = &mut core.ITM.stim[0];
 
-       //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6
-        let mut pwm = pwm::Pwm(&tim3);
-        let c = &Channel::_1;
-        pwm.init(
-            LCDFREQUENCY.invert(),
-            *c,
-            None,
-            &device.GPIOA,
-            &device.GPIOB,
-            &device.GPIOC,
-            &rcc,
-        );
-        pwm.set_duty(*c, pwm.get_max_duty() / 2);
-        pwm.enable(*c);
+       //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6 (Henrik), = PA6 (Simon)
+        // let mut pwm = pwm::Pwm(&tim3);
+        // let c = &Channel::_1;
+        // pwm.init(
+        //     LCDFREQUENCY.invert(),
+        //     *c,
+        //     None,
+        //     &device.GPIOA,
+        //     &device.GPIOB,
+        //     &device.GPIOC,
+        //     &rcc,
+        // );
+        // pwm.set_duty(*c, pwm.get_max_duty() / 2);
+        // pwm.enable(*c);
+        // iprintln!(stim, "{:?}", pwm.get_max_duty()/2);
 
         //Enable ADC converting on adc channel IN_0 (PA0) and IN_1 (PA1), uses pwm to trigger converting and uses DMA2_STREAM0
         //interrupt to print values from the buffer.
@@ -158,12 +160,12 @@ const APP: () = {
         button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
  
         // Toggle commeting on these to change board
-        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
 
     
         // Pins for hal::stm32::I2c
@@ -183,7 +185,6 @@ const APP: () = {
         //     clocks,
         // );
 
-        let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
 
@@ -195,8 +196,8 @@ const APP: () = {
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
 
         // Toggle commeting on these to change board
-        let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, gpiob.pb0.into_push_pull_output(), device.GPIOC, clocks, spi1);
-        // let (mut spi, mut pcd8544) = lcd::init_alt(&mut timer, device.GPIOA, device.GPIOC, clocks, spi1);
+        // let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, gpiob.pb0.into_push_pull_output(), device.GPIOC, clocks, spi1);
+        let (mut spi, mut pcd8544) = lcd::init_alt(&mut timer, device.GPIOA, device.GPIOC, clocks, spi1);
         
         demo::demo(&mut pcd8544, &mut spi);
 
@@ -230,12 +231,12 @@ const APP: () = {
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
         
         // Toggle commeting on these to change board
-        BPC7 = button::BPC7;
-        BPC8 = button::BPC8;
-        BPC9 = button::BPC9;
-        // BPB0 = button::BPB0;
-        // BPB1 = button::BPB1;
-        // BPB2 = button::BPB2;
+        // BPC7 = button::BPC7;
+        // BPC8 = button::BPC8;
+        // BPC9 = button::BPC9;
+        BPB0 = button::BPB0;
+        BPB1 = button::BPB1;
+        BPB2 = button::BPB2;
 
         I2C1 = i2c1;
         SPI = spi;
@@ -260,14 +261,16 @@ const APP: () = {
         schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
     }
 
-    #[interrupt(resources = [BUFFER, DMA2, LCD, SPI])]
-    fn DMA2_STREAM0() {        
+    #[interrupt(resources = [BUFFER, DMA2, LCD, SPI, ITM])]
+    fn DMA2_STREAM0() {
+        let stim = &mut resources.ITM.stim[0];
         match resources.BUFFER.read(resources.DMA2, |x| {
                 let buf: [u16; N] = x.clone();
                 buf
             }) {
                 Err(_) => cortex_m::asm::bkpt(),
                 Ok(b) => {
+                    iprintln!(stim, "{:?}", b);
                     resources.LCD.clear(&mut resources.SPI);
                     resources.LCD.print_char(&mut resources.SPI, 'o' as u8);
                     resources.LCD.print_char(&mut resources.SPI, 'k' as u8);
@@ -275,44 +278,44 @@ const APP: () = {
             }
     }
 
-    // /// Interupt for buttons bound to pins px0
-    // #[interrupt(resources = [ITM, EXTI, BPB0])]
-    // fn EXTI0() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     iprintln!(stim, "Button was clicked!");
-    //     resources.BPB0.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px0
+    #[interrupt(resources = [ITM, EXTI, BPB0])]
+    fn EXTI0() {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Button was clicked!");
+        resources.BPB0.clear_pending(&mut resources.EXTI)
+    }
 
-    // /// Interupt for buttons bound to pins px1
-    // #[interrupt(resources = [ITM, EXTI, BPB1])]
-    // fn EXTI1() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     iprintln!(stim, "Button was clicked!");
-    //     resources.BPB1.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px1
+    #[interrupt(resources = [ITM, EXTI, BPB1])]
+    fn EXTI1() {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Button was clicked!");
+        resources.BPB1.clear_pending(&mut resources.EXTI)
+    }
 
-    // /// Interupt for buttons bound to pins px2
-    // #[interrupt(resources = [ITM, EXTI, BPB2])]
-    // fn EXTI2() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     iprintln!(stim, "Button was clicked!");
-    //     resources.BPB2.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px2
+    #[interrupt(resources = [ITM, EXTI, BPB2])]
+    fn EXTI2() {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Button was clicked!");
+        resources.BPB2.clear_pending(&mut resources.EXTI)
+    }
 
     /// Interrupt for pins 5-9
-    #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD, SPI])]
-    fn EXTI9_5() {
-        resources.ITM.lock(|itm| {
-            let stim = &mut itm.stim[0];
-            iprintln!(stim, "Button was clicked!");
-        });
+    // #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD, SPI])]
+    // fn EXTI9_5() {
+    //     resources.ITM.lock(|itm| {
+    //         let stim = &mut itm.stim[0];
+    //         iprintln!(stim, "Button was clicked!");
+    //     });
         
-        resources.BPC7.clear_pending(&mut resources.EXTI);
-        resources.BPC8.clear_pending(&mut resources.EXTI);
-        resources.BPC9.clear_pending(&mut resources.EXTI);
-        resources.LCD.set_position(&mut resources.SPI, 1, 2);
-        resources.LCD.print(&mut resources.SPI, "Button was clicked!");
-    }
+    //     resources.BPC7.clear_pending(&mut resources.EXTI);
+    //     resources.BPC8.clear_pending(&mut resources.EXTI);
+    //     resources.BPC9.clear_pending(&mut resources.EXTI);
+    //     resources.LCD.set_position(&mut resources.SPI, 1, 2);
+    //     resources.LCD.print(&mut resources.SPI, "Button was clicked!");
+    // }
 
     // /// Interrupt for PC13 user btn on the nucleo board.
     // #[interrupt(resources = [ITM, EXTI, BPC13])]
