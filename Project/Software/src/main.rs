@@ -36,18 +36,19 @@ use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
 use rtfm::{app, Instant};
 
 mod adc;
-mod pwm;
-mod frequency;
-mod time;
-mod dma;
-mod channel;
 mod button;
+mod channel;
+mod demo;
+mod dma;
+mod font;
+mod frequency;
 mod lcd;
+mod lis3dh;
 mod pcd8544;
 mod pcd8544_spi;
-mod demo;
-mod font;
-mod lis3dh;
+mod pwm;
+mod temp;
+mod time;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
@@ -88,6 +89,8 @@ const APP: () = {
     static mut BPB2: button::PB2  = ();
     static mut I2C1: I2C1 = ();
     
+    static mut LCDDATA: lcd::LcdData = ();
+
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     
     #[init(resources = [BUFFER], schedule = [trace])]
@@ -229,11 +232,13 @@ const APP: () = {
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
-        
+    
         // Toggle commeting on these to change board
         // BPC7 = button::BPC7;
         // BPC8 = button::BPC8;
         // BPC9 = button::BPC9;
+
+        LCDDATA = lcd::LcdData::new(20i32);
         BPB0 = button::BPB0;
         BPB1 = button::BPB1;
         BPB2 = button::BPB2;
@@ -247,21 +252,24 @@ const APP: () = {
         BPC13 = button::BPC13;
     }
 
-    #[idle()]
+    #[idle(spawn = [trace])]
     fn idle() -> ! {
+        spawn.trace();
         loop {
             asm::wfi();
         }
     }
 
     /// Periodic task for your pleasure
-    #[task(resources = [ITM], schedule = [trace])]
+    #[task(resources = [ITM, LCDDATA], schedule = [trace])]
     fn trace() {
-        
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "{:?}", resources.LCDDATA.temp_read());
         schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
     }
 
-    #[interrupt(resources = [BUFFER, DMA2, LCD, SPI, ITM])]
+    // Direct Memory Access buffer filled by ADC interrupts.
+    #[interrupt(resources = [BUFFER, DMA2, LCD, LCDDATA, SPI, ITM])]
     fn DMA2_STREAM0() {
         let stim = &mut resources.ITM.stim[0];
         match resources.BUFFER.read(resources.DMA2, |x| {
@@ -270,7 +278,10 @@ const APP: () = {
             }) {
                 Err(_) => cortex_m::asm::bkpt(),
                 Ok(b) => {
-                    iprintln!(stim, "{:?}", b);
+                    iprintln!(stim, "{:?}", b[0]);
+                    let temp = temp::to_celsius(b[0]);
+                    iprintln!(stim, "{:?}", temp);
+                    resources.LCDDATA.temp_write(temp as i32);
                     resources.LCD.clear(&mut resources.SPI);
                     resources.LCD.print_char(&mut resources.SPI, 'o' as u8);
                     resources.LCD.print_char(&mut resources.SPI, 'k' as u8);
