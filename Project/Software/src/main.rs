@@ -81,6 +81,8 @@ const APP: () = {
     // Toggle these to change board
     static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
     // static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
+    static mut BPB5: button::PB5 = ();
+
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
     static mut BPC9: button::PC9  = ();
@@ -158,6 +160,7 @@ const APP: () = {
         let button = button::BPC13;
         button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
  
+        button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // Toggle commeting on these to change board
         button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
         button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
@@ -204,18 +207,30 @@ const APP: () = {
         // demo::demo(&mut pcd8544, &mut spi);
 
         // Enable i2c communication
-        lis3dh::enable(&i2c1);
-        while lis3dh::start(&i2c1).is_err() {};
-        let mut rx_buffer = [0; 2];
-        while lis3dh::write(&i2c1, lis3dh::LIS3DH_REG_WHOAMI as u8).is_err() {}
-        iprintln!(stim, "Write");
-        // while lis3gh::stop(&i2c1);
-        while lis3dh::start(&i2c1).is_err() {};
-        let mut RX_BUFFER_SIZE: usize = 1;
-        let mut buffer = [0; 4];
-        lis3dh::read_ack(&i2c1, &mut buffer);
-        iprintln!(stim, "Values are {} ", buffer[0]);
-        while lis3dh::stop(&i2c1).is_err()  {};
+        let mut buffer = [0; 1];
+        lis3dh::who_am_i(&i2c1, &mut buffer);
+        iprintln!(stim, "I AM {} ", buffer[0]);
+
+        //   setDataRate(LIS3DH_DATARATE_400_HZ);
+        //   // High res & BDU enabled
+        //   writeRegister8(LIS3DH_REG_CTRL4, 0x88);
+        //   // DRDY on INT1
+        //   writeRegister8(LIS3DH_REG_CTRL3, 0x10);
+        // while lis3dh::stop(&i2c1).is_err()  {};
+                 // 400Hz rate
+        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL1, 0x07]);
+
+        let mut ctl1 = [0; 1];
+        lis3dh::write_read_registry(&i2c1, lis3dh::LIS3DH_REG_CTRL1, &mut ctl1);
+        
+        ctl1[0] &= !(0xF0);
+        ctl1[0] |= (lis3dh::Datarate::LIS3DH_DATARATE_400_HZ as u8) << 4;
+        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL1, ctl1[0]]);
+        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL4, 0x88]);
+        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL3, 0x10]);
+        iprintln!(stim, "Wrote registers");
+
+        // while lis3dh::stop(&i2c1).is_err()  {};
 
         demo::demo(&mut pcd8544, &mut spi);
 
@@ -248,6 +263,7 @@ const APP: () = {
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
         
+        BPB5 = button::BPB5;
         // Toggle commeting on these to change board
         BPC7 = button::BPC7;
         BPC8 = button::BPC8;
@@ -319,13 +335,19 @@ const APP: () = {
     // }
 
     /// Interrupt for pins 5-9
-    #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD, SPI])]
+    #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
     fn EXTI9_5() {
-        resources.ITM.lock(|itm| {
-            let stim = &mut itm.stim[0];
-            iprintln!(stim, "Button was clicked!");
-        });
-        
+
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Button was clicked!");
+       // if resources.BPB5.is_pressed() {
+            let mut data = [0; 6];
+            lis3dh::read_accelerometer(resources.I2C1, &mut data);
+            
+            iprintln!(stim, "Accelerometer values: {}, {}, {}, {}, {}, {}", data[0], data[1], data[2], data[3], data[4], data[5]);
+            
+        //}
+        resources.BPB5.clear_pending(&mut resources.EXTI);
         resources.BPC7.clear_pending(&mut resources.EXTI);
         resources.BPC8.clear_pending(&mut resources.EXTI);
         resources.BPC9.clear_pending(&mut resources.EXTI);
