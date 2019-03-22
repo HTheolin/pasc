@@ -14,6 +14,28 @@ use hal::timer::Timer;
 use embedded_hal::spi;
 use crate::pcd8544::{Pcd8544Spi, Pcd8544};
 
+
+
+pub struct LcdData {
+    temp: i32, // Temperature: Celsius
+}
+
+impl LcdData{
+    pub fn new(temp: i32) -> LcdData {
+        LcdData {
+            temp: temp,
+        }
+    }
+    
+    pub fn temp_write(&mut self, temp: i32) {
+        self.temp = temp;
+    }
+
+    pub fn temp_read(&self) -> i32 {
+        self.temp
+    }
+}
+
 pub fn init(timer: &mut Timer<TIM5>, gpioa: GPIOA, dc: PB0<Output<PushPull>>, gpioc: GPIOC, clocks: Clocks, spi1: SPI1) 
     -> 
     (Spi<SPI1, (PA5<hal::gpio::Alternate<AF5>>, 
@@ -76,7 +98,7 @@ pub fn init_alt(timer: &mut Timer<TIM5>, gpioa: GPIOA, gpioc: GPIOC, clocks: Clo
         spi1,
         (sck, miso, mosi),
         spi_mode,
-        4_000_000.hz(),
+        1000000.hz(),
         clocks,
     );
         

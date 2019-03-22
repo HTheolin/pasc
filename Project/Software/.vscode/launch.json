@@ -17,7 +17,7 @@
             "type": "cortex-debug",
             "request": "launch",
             "servertype": "openocd",
-            "name": "software (debug) 16Mhz",
+            "name": "software (debug) 64Mhz",
             "preLaunchTask": "cargo build",
             "executable": "./target/thumbv7em-none-eabihf/debug/Software",
             "configFiles": [
@@ -29,7 +29,7 @@
             ],
             "swoConfig": {
                 "enabled": true,
-                "cpuFrequency": 16000000,
+                "cpuFrequency": 64000000,
                 "swoFrequency": 2000000, // you may try 1000000 if not working
                 "source": "probe",
                 "decoders": [
@@ -46,7 +46,7 @@
             "type": "cortex-debug",
             "request": "launch",
             "servertype": "openocd",
-            "name": "software (release) 16Mhz",
+            "name": "software (release) 64Mhz",
             "preLaunchTask": "cargo build --release",
             "executable": "./target/thumbv7em-none-eabihf/release/Software",
             "configFiles": [

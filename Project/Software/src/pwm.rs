@@ -135,14 +135,18 @@ macro_rules! impl_Pwm {
                         }
                     }
                 } else if tim.type_id() == TypeId::of::<TIM3>() {
-                    // CH1 = PC6 = alternate push-pull
+                    // CH1 = PC6, PA6 = alternate push-pull
                     // CH2 = PC7 = alternate push-pull
                     // CH3 = PB0 = alternate push-pull
                     // CH4 = PB1 = alternate push-pull
                     match channel {
                         Channel::_1 => {
-                            gpioc.afrl.modify(|_, w| w.afrl6().bits(2));
+                            // PA6 (Simon PCB)
+                            gpioa.afrl.modify(|_, w| w.afrl6().bits(2));
                             gpioc.moder.modify(|_, w| w.moder6().bits(2));
+                            // // PC6 (Henrik PCB)
+                            // gpioc.afrl.modify(|_, w| w.afrl6().bits(2));
+                            // gpioc.moder.modify(|_, w| w.moder6().bits(2));
                         }
                         Channel::_2 => {
                             gpioc.afrl.modify(|_, w|  w.afrl7().bits(2));
