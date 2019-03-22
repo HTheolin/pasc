@@ -158,34 +158,16 @@ const APP: () = {
 
 
         let button = button::BPC13;
-        button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
  
-        button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         // Toggle commeting on these to change board
-        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
         // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
         // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
-
-    
-        // Pins for hal::stm32::I2c
-        // let pinscl = gpiob.pb6.into_alternate_af4();
-        // let pinscl = pinscl.set_speed(Speed::VeryHigh);
-        // let pinscl = pinscl.set_open_drain();
-        // let pinscl = pinscl.internal_pull_up(false);
-        // let pinsda = gpiob.pb7.into_alternate_af4();
-        // let pinsda = pinsda.set_speed(Speed::VeryHigh);
-        // let pinsda = pinsda.set_open_drain();
-        // let pinsda = pinsda.internal_pull_up(false);
-
-        // let mut i2c = I2c::i2c1(
-        //     i2c1,
-        //     (pinscl, pinsda),
-        //     I2CFREQUENCY,
-        //     clocks,
-        // );
 
         let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
@@ -208,56 +190,16 @@ const APP: () = {
 
         // Enable i2c communication
         let mut buffer = [0; 1];
-        lis3dh::who_am_i(&i2c1, &mut buffer);
+        lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
         iprintln!(stim, "I AM {} ", buffer[0]);
-
-        //   setDataRate(LIS3DH_DATARATE_400_HZ);
-        //   // High res & BDU enabled
-        //   writeRegister8(LIS3DH_REG_CTRL4, 0x88);
-        //   // DRDY on INT1
-        //   writeRegister8(LIS3DH_REG_CTRL3, 0x10);
-        // while lis3dh::stop(&i2c1).is_err()  {};
-                 // 400Hz rate
-        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL1, 0x07]);
-
-        let mut ctl1 = [0; 1];
-        lis3dh::write_read_registry(&i2c1, lis3dh::LIS3DH_REG_CTRL1, &mut ctl1);
-        
-        ctl1[0] &= !(0xF0);
-        ctl1[0] |= (lis3dh::Datarate::LIS3DH_DATARATE_400_HZ as u8) << 4;
-        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL1, ctl1[0]]);
-        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL4, 0x88]);
-        lis3dh::write_registry(&i2c1, &mut [lis3dh::LIS3DH_REG_CTRL3, 0x10]);
+        lis3dh::setup(&i2c1);
+        lis3dh::set_datarate(&i2c1, lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
+        lis3dh::set_range(&i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
         iprintln!(stim, "Wrote registers");
-
+        lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
         // while lis3dh::stop(&i2c1).is_err()  {};
 
         demo::demo(&mut pcd8544, &mut spi);
-
-        // // Enable i2c communication
-        // lis3dh::enable(&i2c1);
-        // while lis3dh::start(&i2c1).is_err() {};
-        // let mut rx_buffer = [0; 2];
-        // while lis3dh::write(&i2c1, lis3dh::LIS3DH_REG_WHOAMI as u8).is_err() {}
-        // let mut RX_BUFFER_SIZE: usize = 2;
-        // for i in 0..RX_BUFFER_SIZE {
-        //     rx_buffer[i] = loop {
-        //         if i == RX_BUFFER_SIZE - 1 {
-        //             // Do not ACK the last byte received and send STOP
-        //             if let Ok(byte) = lis3dh::read_nack(&i2c1) {
-        //                 break byte;
-        //             }
-        //         } else {
-        //             // ACK the byte after receiving
-        //             if let Ok(byte) = lis3dh::read_ack(&i2c1) {
-        //                 lis3dh::stop(&i2c1);
-        //                 break byte;
-        //             }
-        //         }
-        //     }
-        // }
-        // while lis3dh::stop(&i2c1).is_err()  {};
-        // iprintln!(stim, "Values are {} ", rx_buffer[0]);
 
         //Enable adc after splash screen!
         adc.enable();
@@ -340,13 +282,18 @@ const APP: () = {
 
         let stim = &mut resources.ITM.stim[0];
         iprintln!(stim, "Button was clicked!");
-       // if resources.BPB5.is_pressed() {
-            let mut data = [0; 6];
-            lis3dh::read_accelerometer(resources.I2C1, &mut data);
+       
+        let mut data = [0; 6];
+        lis3dh::read_accelerometer(resources.I2C1, &mut data);
+        let x = (data[0] as u16) << 8 | data[1] as u16;
+        let y = (data[2] as u16) << 8 | data[3] as u16;
+        let z = (data[4] as u16) << 8 | data[5] as u16;
+        let x_g = (x as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        let y_g = (y as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        let z_g = (z as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
             
-            iprintln!(stim, "Accelerometer values: {}, {}, {}, {}, {}, {}", data[0], data[1], data[2], data[3], data[4], data[5]);
-            
-        //}
+        
         resources.BPB5.clear_pending(&mut resources.EXTI);
         resources.BPC7.clear_pending(&mut resources.EXTI);
         resources.BPC8.clear_pending(&mut resources.EXTI);
