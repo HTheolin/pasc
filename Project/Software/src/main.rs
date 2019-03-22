@@ -79,7 +79,7 @@ const APP: () = {
     static mut SPI: Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)> = ();
 
     static mut BPB5: button::PB5 = ();
-    
+
     // Toggle these to change board
     // static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
     static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
@@ -178,7 +178,7 @@ const APP: () = {
 
         //Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(16.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let gpiob = device.GPIOB.split();
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
