@@ -190,7 +190,7 @@ const APP: () = {
 
         //Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(16.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let gpiob = device.GPIOB.split();
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
@@ -199,32 +199,38 @@ const APP: () = {
         let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, gpiob.pb0.into_push_pull_output(), device.GPIOC, clocks, spi1);
         // let (mut spi, mut pcd8544) = lcd::init_alt(&mut timer, device.GPIOA, device.GPIOC, clocks, spi1);
         
-        demo::demo(&mut pcd8544, &mut spi);
+        // demo::demo(&mut pcd8544, &mut spi);
 
-        // // Enable i2c communication
-        // lis3dh::enable(&i2c1);
-        // while lis3dh::start(&i2c1).is_err() {};
-        // let mut rx_buffer = [0; 2];
-        // while lis3dh::write(&i2c1, lis3dh::LIS3DH_REG_WHOAMI as u8).is_err() {}
-        // let mut RX_BUFFER_SIZE: usize = 2;
+        // Enable i2c communication
+        lis3dh::enable(&i2c1);
+        while lis3dh::start(&i2c1).is_err() {};
+        let mut rx_buffer = [0; 2];
+        while lis3dh::write(&i2c1, lis3dh::LIS3DH_REG_WHOAMI as u8).is_err() {}
+        iprintln!(stim, "Write");
+        // while lis3gh::stop(&i2c1);
+        while lis3dh::start(&i2c1).is_err() {};
+        let mut RX_BUFFER_SIZE: usize = 1;
+        let mut buffer = [0; 4];
+        lis3dh::read_ack(&i2c1, &mut buffer);
         // for i in 0..RX_BUFFER_SIZE {
         //     rx_buffer[i] = loop {
         //         if i == RX_BUFFER_SIZE - 1 {
         //             // Do not ACK the last byte received and send STOP
-        //             if let Ok(byte) = lis3dh::read_nack(&i2c1) {
+        //             if let Ok(byte) = lis3dh::read_ack(&i2c1, &buffer) {
         //                 break byte;
         //             }
         //         } else {
         //             // ACK the byte after receiving
-        //             if let Ok(byte) = lis3dh::read_ack(&i2c1) {
-        //                 lis3dh::stop(&i2c1);
-        //                 break byte;
-        //             }
+        //             // if let Ok(byte) = lis3dh::read_ack(&i2c1) {
+        //             //     //lis3dh::stop(&i2c1);
+        //             //     break byte;
+        //             // }
         //         }
         //     }
         // }
-        // while lis3dh::stop(&i2c1).is_err()  {};
-        // iprintln!(stim, "Values are {} ", rx_buffer[0]);
+        iprintln!(stim, "Values are {} ", buffer[0]);
+        while lis3dh::stop(&i2c1).is_err()  {};
+
 
         //Enable adc after splash screen!
         adc.enable();

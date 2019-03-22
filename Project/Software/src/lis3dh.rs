@@ -110,12 +110,12 @@ pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {
     i2c.cr1.write(|w|  w.swrst().set_bit());
     i2c.cr1.write(|w| unsafe{ w.bits(0) });
 
-    i2c.cr2.modify(|_,w| unsafe { w.freq().bits(pclk1_mhz as u8) });
+    i2c.cr2.modify(|_,w| unsafe { w.freq().bits(8 as u8) });
 
     // Use 100_000 Hz baud rate
     // let mut result: u16 = (pclk1_hz / (100_000 * 2)) as u16;
     let result = {
-            let result = (pclk1_hz / (100_000 / 2)) as u16;
+            let result = (pclk1_hz / (10_000 / 2)) as u16;
             if result < 1 {
                 1
             } else {
@@ -156,6 +156,7 @@ pub fn start(i2c:  &I2C1) -> Result<(), nb::Error<I2CError> > {
         // If we got NACK and tx empty, use ACK pulling:
         i2c.sr1.modify(|_,w| w.af().clear_bit());
     }
+    i2c.cr1.modify(|_,w|  w.ack().set_bit());
     // Send START condition
     i2c.cr1.modify(|_, w| w.start().set_bit());
     // Wait for repeated start generation
@@ -164,6 +165,10 @@ pub fn start(i2c:  &I2C1) -> Result<(), nb::Error<I2CError> > {
     if i2c.sr2.read().busy().bit_is_clear() {
         return Err(nb::Error::WouldBlock);
     }
+    while {
+        let sr2 = i2c.sr2.read();
+        sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
+    } {}
 
     Ok(())
 }
@@ -178,75 +183,68 @@ pub fn write(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
             return Err(nb::Error::Other(I2CError::Timeout));
         }
     }
+    i2c.sr2.read();
+
 
     while i2c.sr1.read().tx_e().bit_is_clear() {}
 
     let b = i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
-    let sr = i2c.sr1.read();
+    while {
+            let sr1 = i2c.sr1.read();
 
-    if sr.ovr().bit_is_set() {
-        Err(nb::Error::Other(I2CError::Overrun))
-    } else if sr.timeout().bit_is_set() {
-        Err(nb::Error::Other(I2CError::Timeout))
-    } else if sr.berr().bit_is_set() {
-        Err(nb::Error::Other(I2CError::BusError))
-    } else if sr.af().bit_is_set() {
-        Err(nb::Error::Other(I2CError::NACK))
-    } else if sr.btf().bit_is_clear() {
-        Ok(b)
-    } else {
-        Err(nb::Error::WouldBlock)
-    } 
+            // If we received a NACK, then this is an error
+            if sr1.af().bit_is_set() {
+                return Err(nb::Error::Other(I2CError::NACK));
+            }
+
+            sr1.btf().bit_is_clear()
+    } {}
+
+    Ok(b)
 }
 
 /// Read a byte and respond with ACK
-pub fn read_ack(i2c: &I2C1) -> Result<u8, nb::Error<I2CError>> {
+pub fn read_ack(i2c: &I2C1, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
     
     i2c.dr.write(|w| unsafe { w.bits((u32::from(ADDRESS) << 1) + 1) });
     
     // Wait for end of address transmission
     while i2c.sr1.read().addr().bit_is_clear() {
-        if i2c.sr1.read().af().bit_is_set() {
-            return Err(nb::Error::Other(I2CError::Timeout));
-        }
+        // if i2c.sr1.read().af().bit_is_set() {
+        //     return Err(nb::Error::Other(I2CError::Timeout));
+        // }
     }
 
     i2c.sr2.read();
     
-    while i2c.sr1.read().rx_ne().bit_is_clear() {}
-
-    let sr = i2c.sr1.read();
-
-    if sr.ovr().bit_is_set() {
-        Err(nb::Error::Other(I2CError::Overrun))
-    } else if sr.timeout().bit_is_set() {
-        Err(nb::Error::Other(I2CError::Timeout))
-    } else if sr.berr().bit_is_set() {
-        Err(nb::Error::Other(I2CError::BusError))
-    } else if sr.rx_ne().bit_is_set() || sr.btf().bit_is_set() {
-         let value = i2c.dr.read().bits() as u8;
-         Ok(value)
-    } else {
-        Err(nb::Error::WouldBlock)
-    }
-}
-
-
-/// Read a byte and respond with NACK
-pub fn read_nack(i2c: &I2C1)  -> Result<u8, nb::Error<I2CError>> {
-    // In case a single byte has to be received, the Acknowledge disable
-    // is made before ADDR flag is cleared. Disable ACK.
-    i2c.cr1.modify(|_,w|  w.ack().clear_bit());
-
-    if i2c.sr1.read().addr().bit_is_set() {
-        // Reading right after the address byte
-        let _sr2 = i2c.sr2.read().bits();
+    for c in buffer {
+        *c = recv_byte(i2c)?;
     }
 
-    i2c.cr1.modify(|_, w| w.stop().set_bit());
-    read_ack(i2c)
+    Ok(())
 }
+
+fn recv_byte(i2c: &I2C1) -> Result<u8, nb::Error<I2CError>> {
+        while i2c.sr1.read().rx_ne().bit_is_clear() {}
+        let value = i2c.dr.read().bits() as u8;
+        Ok(value)
+}
+
+// /// Read a byte and respond with NACK
+// pub fn read_nack(i2c: &I2C1)  -> Result<u8, nb::Error<I2CError>> {
+//     // In case a single byte has to be received, the Acknowledge disable
+//     // is made before ADDR flag is cleared. Disable ACK.
+//     i2c.cr1.modify(|_,w|  w.ack().clear_bit());
+
+//     if i2c.sr1.read().addr().bit_is_set() {
+//         // Reading right after the address byte
+//         let _sr2 = i2c.sr2.read().bits();
+//     }
+
+//     i2c.cr1.modify(|_, w| w.stop().set_bit());
+//     read_ack(i2c)
+// }
 
 
 /// Send STOP condition
@@ -256,9 +254,9 @@ pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
 
     let _sr2 = i2c.sr2.read();
     
-    if i2c.sr1.read().tx_e().bit_is_clear() && i2c.sr1.read().btf().bit_is_clear() {
-        return Err(nb::Error::WouldBlock);
-    }
+    // if i2c.sr1.read().tx_e().bit_is_clear() && i2c.sr1.read().btf().bit_is_clear() {
+    //     return Err(nb::Error::WouldBlock);
+    // }
     // Send STOP condition
     i2c.cr1.modify(|_, w| w.stop().set_bit());
     Ok(())
@@ -273,19 +271,19 @@ pub fn who_am_i(i2c: &I2C1) -> Result<[u8; RX_BUFFER_SIZE], nb::Error<I2CError>>
     // Read incoming bytes and ACK them
     while start(i2c).is_err() {}
     for i in 0..RX_BUFFER_SIZE {
-        rx_buffer[i] = loop {
-            if i == RX_BUFFER_SIZE - 1 {
-                // Do not ACK the last byte received and send STOP
-                if let Ok(byte) = read_nack(i2c) {
-                    break byte;
-                }
-            } else {
-                // ACK the byte after receiving
-                if let Ok(byte) = read_ack(i2c) {
-                    break byte;
-                }
-            }
-        }
+        // rx_buffer[i] = loop {
+        //     if i == RX_BUFFER_SIZE - 1 {
+        //         // Do not ACK the last byte received and send STOP
+        //         if let Ok(byte) = read_nack(i2c) {
+        //             break byte;
+        //         }
+        //     } else {
+        //         // ACK the byte after receiving
+        //         if let Ok(byte) = read_ack(i2c) {
+        //             break byte;
+        //         }
+        //     }
+        // }
     }
     Ok(rx_buffer)
 }
