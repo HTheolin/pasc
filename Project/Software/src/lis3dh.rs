@@ -484,3 +484,4 @@ pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
     i2c.cr1.modify(|_, w| w.stop().set_bit());
     Ok(())
 }
+
