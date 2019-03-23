@@ -74,6 +74,8 @@ const APP: () = {
     static mut EXTI: EXTI = ();
     static mut BPC13: button::PC13 = ();
 
+    static mut BPB5: button::PB5 = ();
+
     // Toggle these to change board
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
@@ -116,9 +118,8 @@ const APP: () = {
         // );
         // pwm.set_duty(*c, pwm.get_max_duty() / 2);
         // pwm.enable(*c);
-        let stim = &mut core.ITM.stim[0];
 
-       //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6 (Henrik), = PA6 (Simon)
+        //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6 (Henrik), = PA6 (Simon)
         // let mut pwm = pwm::Pwm(&tim3);
         // let c = &Channel::_1;
         // pwm.init(
@@ -153,36 +154,20 @@ const APP: () = {
         adc.enable_input(adc::AdcChannel::_0, 1, &device.GPIOA, &device.GPIOB, &device.GPIOC);
         adc.enable_input(adc::AdcChannel::_1, 2, &device.GPIOA, &device.GPIOB, &device.GPIOC);
 
-
         let button = button::BPC13;
-        button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
+        button.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
  
+        button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        
         // Toggle commeting on these to change board
-        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
-        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING);
+        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
-    
-        // Pins for hal::stm32::I2c
-        // let pinscl = gpiob.pb6.into_alternate_af4();
-        // let pinscl = pinscl.set_speed(Speed::VeryHigh);
-        // let pinscl = pinscl.set_open_drain();
-        // let pinscl = pinscl.internal_pull_up(false);
-        // let pinsda = gpiob.pb7.into_alternate_af4();
-        // let pinsda = pinsda.set_speed(Speed::VeryHigh);
-        // let pinsda = pinsda.set_open_drain();
-        // let pinsda = pinsda.internal_pull_up(false);
-
-        // let mut i2c = I2c::i2c1(
-        //     i2c1,
-        //     (pinscl, pinsda),
-        //     I2CFREQUENCY,
-        //     clocks,
-        // );
-
+        let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
 
@@ -191,6 +176,7 @@ const APP: () = {
         let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
+
 
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
@@ -215,36 +201,22 @@ const APP: () = {
         let sck  = gpioa.pa5.into_alternate_af5();
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
-
-        // // Enable i2c communication
-        // lis3dh::enable(&i2c1);
-        // while lis3dh::start(&i2c1).is_err() {};
-        // let mut rx_buffer = [0; 2];
-        // while lis3dh::write(&i2c1, lis3dh::LIS3DH_REG_WHOAMI as u8).is_err() {}
-        // let mut RX_BUFFER_SIZE: usize = 2;
-        // for i in 0..RX_BUFFER_SIZE {
-        //     rx_buffer[i] = loop {
-        //         if i == RX_BUFFER_SIZE - 1 {
-        //             // Do not ACK the last byte received and send STOP
-        //             if let Ok(byte) = lis3dh::read_nack(&i2c1) {
-        //                 break byte;
-        //             }
-        //         } else {
-        //             // ACK the byte after receiving
-        //             if let Ok(byte) = lis3dh::read_ack(&i2c1) {
-        //                 lis3dh::stop(&i2c1);
-        //                 break byte;
-        //             }
-        //         }
-        //     }
-        // }
-        // while lis3dh::stop(&i2c1).is_err()  {};
-        // iprintln!(stim, "Values are {} ", rx_buffer[0]);
+       
+        // Enable i2c communication
+        let mut buffer = [0; 1];
+        lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
+        iprintln!(stim, "I AM {} ", buffer[0]);
+        lis3dh::setup(&i2c1);
+        lis3dh::set_datarate(&i2c1, lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
+        lis3dh::set_range(&i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
+        iprintln!(stim, "Wrote registers");
+        lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
 
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
-    
+        
+        BPB5 = button::BPB5;
         // Toggle commeting on these to change board
         BPC7 = button::BPC7;
         BPC8 = button::BPC8;
@@ -327,16 +299,27 @@ const APP: () = {
     // }
 
     /// Interrupt for pins 5-9
-    #[interrupt(resources = [ITM, EXTI, BPC7, BPC8, BPC9, LCD])]
+    // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
+    #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, LCD])]
     fn EXTI9_5() {
-        resources.ITM.lock(|itm| {
-            let stim = &mut itm.stim[0];
-            iprintln!(stim, "Button was clicked!");
-        });
-        
-        resources.BPC7.clear_pending(&mut resources.EXTI);
-        resources.BPC8.clear_pending(&mut resources.EXTI);
-        resources.BPC9.clear_pending(&mut resources.EXTI);
+        let stim = &mut resources.ITM.stim[0];
+
+        let mut data = [0; 6];
+        lis3dh::read_accelerometer(resources.I2C1, &mut data);
+        let x = (data[0] as u16) << 8 | data[1] as u16;
+        let y = (data[2] as u16) << 8 | data[3] as u16;
+        let z = (data[4] as u16) << 8 | data[5] as u16;
+        let x_g = (x as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        let y_g = (y as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        let z_g = (z as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
+        iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
+            
+        resources.BPB5.clear_pending(&mut resources.EXTI);
+        // resources.BPC7.clear_pending(&mut resources.EXTI);
+        // resources.BPC8.clear_pending(&mut resources.EXTI);
+        // resources.BPC9.clear_pending(&mut resources.EXTI);
+        let acc = "Accelerometer values";
+        resources.LCD.write_line(3, acc);
     }
 
     // /// Interrupt for PC13 user btn on the nucleo board.

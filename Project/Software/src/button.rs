@@ -14,7 +14,7 @@ macro_rules! impl_Button {
 
         impl $PXX {
 
-            pub fn init(&self, gpiox: &$GPIOX, rcc: &RCC, syscfg: &SYSCFG, exti: &EXTI, edge: Edge) {
+            pub fn init(&self, gpiox: &$GPIOX, rcc: &RCC, syscfg: &SYSCFG, exti: &EXTI, edge: Edge, pullUp: bool) {
                 
                 if gpiox.type_id() == TypeId::of::<GPIOA>() {
                    rcc.ahb1enr.modify(|_, w| w.gpioaen().set_bit());
@@ -26,7 +26,11 @@ macro_rules! impl_Button {
                 
                 // Configure PC13 as input with pull-downs, RM0368 Table 23
                 gpiox.moder.modify(|_, w| w.$moderx().bits(0) );
-                gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b10) });
+                if pullUp {
+                    gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b01) });
+                } else {
+                    gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b10) });
+                }
                 // System configuration controller clock enable
                 rcc.apb2enr.modify(|_, w| w.syscfgen().set_bit());
                 // Enable external interrupt RM0368 7.2.6
@@ -84,4 +88,5 @@ impl_Button!(GPIOC, PC9, BPC9, exticr3, exti9, moder9, pupdr9, mr9, tr9, pr9, od
 impl_Button!(GPIOB, PB0, BPB0, exticr1, exti0, moder0, pupdr0, mr0, tr0, pr0, odr0);
 impl_Button!(GPIOB, PB1, BPB1, exticr1, exti1, moder1, pupdr1, mr1, tr1, pr1, odr1);
 impl_Button!(GPIOB, PB2, BPB2, exticr1, exti2, moder2, pupdr2, mr2, tr2, pr2, odr2);
+impl_Button!(GPIOB, PB5, BPB5, exticr2, exti5, moder5, pupdr5, mr5, tr5, pr5, odr5);
 impl_Button!(GPIOC, PC13, BPC13, exticr4, exti13, moder13, pupdr13, mr13, tr13, pr13, odr13);
