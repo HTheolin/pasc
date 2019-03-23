@@ -27,7 +27,6 @@ use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
 use hal::gpio::{Output, PushPull, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
 use hal::time::{Hertz, KiloHertz};
-use hal::spi::{Spi, NoMiso};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
 use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
@@ -52,7 +51,6 @@ mod time;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
-use pcd8544::{Pcd8544, Pcd8544Spi};
 
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
@@ -76,22 +74,17 @@ const APP: () = {
     static mut EXTI: EXTI = ();
     static mut BPC13: button::PC13 = ();
 
-    static mut SPI: Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)> = ();
-
     static mut BPB5: button::PB5 = ();
 
     // Toggle these to change board
-    // static mut LCD: Pcd8544Spi<PB0<Output<PushPull>>, PC3<Output<PushPull>>> = ();
-    static mut LCD: Pcd8544Spi<PC2<Output<PushPull>>, PC0<Output<PushPull>>> = ();
-    // static mut BPC7: button::PC7  = ();
-    // static mut BPC8: button::PC8  = ();
-    // static mut BPC9: button::PC9  = ();
-    static mut BPB0: button::PB0  = ();
-    static mut BPB1: button::PB1  = ();
-    static mut BPB2: button::PB2  = ();
+    static mut BPC7: button::PC7  = ();
+    static mut BPC8: button::PC8  = ();
+    static mut BPC9: button::PC9  = ();
+    static mut LCD: lcd::Lcd = ();
+    // static mut BPB0: button::PB0  = ();
+    // static mut BPB1: button::PB1  = ();
+    // static mut BPB2: button::PB2  = ();
     static mut I2C1: I2C1 = ();
-    
-    static mut LCDDATA: lcd::LcdData = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     
@@ -176,17 +169,37 @@ const APP: () = {
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
 
-        //Get clock for timer to enable a delay in the lcd startup sequence
+        // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
-        let gpiob = device.GPIOB.split();
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
 
-        // Toggle commeting on these to change board
-        // let (mut spi, mut pcd8544) = lcd::init(&mut timer, device.GPIOA, gpiob.pb0.into_push_pull_output(), device.GPIOC, clocks, spi1);
-        let (mut spi, mut pcd8544) = lcd::init_alt(&mut timer, device.GPIOA, device.GPIOC, clocks, spi1);
-        
+
+        let gpioa = device.GPIOA.split();
+        let gpiob = device.GPIOB.split();
+        let gpioc = device.GPIOC.split();
+
+        // LCD.
+        // To change between boards, comment/uncomment these lines.
+        // Also change the macro call in lcd.rs!
+
+        // // Simon PCB LCD.
+        // let sce  = gpioc.pc0.into_push_pull_output().into();
+        // let rst  = gpioc.pc1.into_push_pull_output().into();
+        // let dc   = gpioc.pc2.into_push_pull_output().into();
+        // let mosi = gpioa.pa7.into_alternate_af5();
+        // let sck  = gpioa.pa5.into_alternate_af5();
+
+        // Henrik PCB LCD.
+        let sce  = gpioc.pc5.into_push_pull_output().into();
+        let rst  = gpioc.pc4.into_push_pull_output().into();
+        let dc   = gpiob.pb0.into_push_pull_output().into();
+        let mosi = gpioa.pa7.into_alternate_af5();
+        let sck  = gpioa.pa5.into_alternate_af5();
+
+        let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
+       
         // Enable i2c communication
         let mut buffer = [0; 1];
         lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
@@ -197,26 +210,22 @@ const APP: () = {
         iprintln!(stim, "Wrote registers");
         lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
 
-        demo::demo(&mut pcd8544, &mut spi);
-
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
         
         BPB5 = button::BPB5;
         // Toggle commeting on these to change board
-        // BPC7 = button::BPC7;
-        // BPC8 = button::BPC8;
-        // BPC9 = button::BPC9;
+        BPC7 = button::BPC7;
+        BPC8 = button::BPC8;
+        BPC9 = button::BPC9;
 
-        LCDDATA = lcd::LcdData::new(20i32);
-        BPB0 = button::BPB0;
-        BPB1 = button::BPB1;
-        BPB2 = button::BPB2;
+        // BPB0 = button::BPB0;
+        // BPB1 = button::BPB1;
+        // BPB2 = button::BPB2;
 
         I2C1 = i2c1;
-        SPI = spi;
-        LCD = pcd8544;
+        LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
         EXTI = exti;
@@ -232,61 +241,64 @@ const APP: () = {
     }
 
     /// Periodic task for your pleasure
-    #[task(resources = [ITM, LCDDATA], schedule = [trace])]
+    #[task(resources = [ITM, LCD], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "{:?}", resources.LCDDATA.temp_read());
+        iprintln!(stim, "{:?}", resources.LCD.temp_read());
         schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
-    #[interrupt(resources = [BUFFER, DMA2, LCD, LCDDATA, SPI, ITM])]
+    #[interrupt(resources = [BUFFER, DMA2, LCD, ITM])]
     fn DMA2_STREAM0() {
         let stim = &mut resources.ITM.stim[0];
         match resources.BUFFER.read(resources.DMA2, |x| {
                 let buf: [u16; N] = x.clone();
                 buf
-            }) {
-                Err(_) => cortex_m::asm::bkpt(),
-                Ok(b) => {
-                    iprintln!(stim, "{:?}", b[0]);
-                    let temp = temp::to_celsius(b[0]);
-                    iprintln!(stim, "{:?}", temp);
-                    resources.LCDDATA.temp_write(temp as i32);
-                    resources.LCD.clear(&mut resources.SPI);
-                    resources.LCD.print_char(&mut resources.SPI, 'o' as u8);
-                    resources.LCD.print_char(&mut resources.SPI, 'k' as u8);
-                }
+        }) {
+            Err(_) => cortex_m::asm::bkpt(),
+            Ok(b) => {
+                iprintln!(stim, "{:?}", b[0]);
+                let temp = temp::to_celsius(b[0]);
+                iprintln!(stim, "{:?}", temp);
+                resources.LCD.temp_write(temp as f32);
             }
+        }
     }
 
-    /// Interupt for buttons bound to pins px0
-    #[interrupt(resources = [ITM, EXTI, BPB0])]
-    fn EXTI0() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
-        resources.BPB0.clear_pending(&mut resources.EXTI)
-    }
+    // /// Interupt for buttons bound to pins px0
+    // #[interrupt(resources = [ITM, EXTI, BPB0, LCD])]
+    // fn EXTI0() {
+    //     let stim = &mut resources.ITM.stim[0];
+    //     let lcd = &mut resources.LCD;
+    //     iprintln!(stim, "Button was clicked!");
+    //     lcd.write_line(2, "Button 1!");
+    //     resources.BPB0.clear_pending(&mut resources.EXTI)
+    // }
 
-    /// Interupt for buttons bound to pins px1
-    #[interrupt(resources = [ITM, EXTI, BPB1])]
-    fn EXTI1() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
-        resources.BPB1.clear_pending(&mut resources.EXTI)
-    }
+    // /// Interupt for buttons bound to pins px1
+    // #[interrupt(resources = [ITM, EXTI, BPB1, LCD])]
+    // fn EXTI1() {
+    //     let stim = &mut resources.ITM.stim[0];
+    //     let lcd = &mut resources.LCD;
+    //     iprintln!(stim, "Button was clicked!");
+    //     lcd.write_line(2, "Button 2!");
+    //     resources.BPB1.clear_pending(&mut resources.EXTI)
+    // }
 
-    /// Interupt for buttons bound to pins px2
-    #[interrupt(resources = [ITM, EXTI, BPB2])]
-    fn EXTI2() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Button was clicked!");
-        resources.BPB2.clear_pending(&mut resources.EXTI)
-    }
+    // /// Interupt for buttons bound to pins px2
+    // #[interrupt(resources = [ITM, EXTI, BPB2, LCD])]
+    // fn EXTI2() {
+    //     let stim = &mut resources.ITM.stim[0];
+    //     let lcd = &mut resources.LCD;
+    //     iprintln!(stim, "Button was clicked!");
+    //     lcd.write_line(2, "Button 3!");
+    //     resources.BPB2.clear_pending(&mut resources.EXTI)
+    // }
 
     /// Interrupt for pins 5-9
     // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, LCD, SPI])]
+    #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, LCD])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
 
@@ -304,8 +316,8 @@ const APP: () = {
         // resources.BPC7.clear_pending(&mut resources.EXTI);
         // resources.BPC8.clear_pending(&mut resources.EXTI);
         // resources.BPC9.clear_pending(&mut resources.EXTI);
-        resources.LCD.set_position(&mut resources.SPI, 1, 2);
-        resources.LCD.print(&mut resources.SPI, "Button was clicked!");
+        let acc = "Accelerometer values";
+        resources.LCD.write_line(3, acc);
     }
 
     // /// Interrupt for PC13 user btn on the nucleo board.

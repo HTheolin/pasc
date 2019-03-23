@@ -21,18 +21,9 @@ where
     DC: OutputPin,
     CS: OutputPin,
 {
-    pub fn new(
-        dc: DC,
-        cs: CS,
-        rst: &mut OutputPin,
-        timer: &mut Timer<TIM5>,
-    ) -> Pcd8544Spi<DC, CS> {
-        rst.set_low();
-        timer.start(hal::time::Hertz(100));
-        block!(timer.wait()).unwrap();
-        rst.set_high();
+    pub fn new(dc: DC, cs: CS) -> Pcd8544Spi<DC, CS> {
         let mut pcd = Pcd8544Spi { dc, cs };
-        pcd
+        return pcd;
     }
 }
 
