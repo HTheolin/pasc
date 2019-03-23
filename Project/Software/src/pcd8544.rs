@@ -13,7 +13,7 @@ pub trait Pcd8544 {
     fn init(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.command(spi, 0x21); // chip active; horizontal addressing mode (V = 0); use extended instruction set (H = 1)
         // set LCD Vop (contrast), which may require some tweaking:
-        self.command(spi, 0xBF); // 0x80 to 0xFF. 0xA0 works for Henrik PCB, 0xBF is good for Simon PCB.
+        self.command(spi, 0xB4); // 0x80 to 0xFF. 0xA0 works for Henrik PCB, 0xBF is good for Simon PCB.
         self.command(spi, 0x04); // set temp coefficient
         self.command(spi, 0x13); // LCD bias mode 1:48: try 0x13 or 0x14
 
@@ -33,6 +33,12 @@ pub trait Pcd8544 {
     fn print(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, s: &str) {
         for c in s.bytes() {
             self.print_char(spi, c);
+        }
+    }
+
+    fn print_bytes(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, s: &[u8]) {
+        for c in s {
+            self.print_char(spi, *c);
         }
     }
 

@@ -1,10 +1,13 @@
-use libm::{F32Ext};
+use libm::{F32Ext, F64Ext};
 
 pub fn to_celsius(sample: u16) -> f32 {
     let volts: f32 = bits_to_volts(sample);
     let ohms: f32 = volts_to_ohms(volts);
     let temp: f32 = ohms_to_celsius(ohms);
-    return temp;
+
+    let decimals: u8 = 1;
+    let temp_trunc: f32 = truncate_f32(temp, decimals);
+    return temp_trunc;
 }
 
 // bits_to_volts: From 12-bit ADC read sample to voltage over Rx, the pt1000 resistor.
@@ -89,4 +92,13 @@ fn t2r_prime(t: f32) -> f32 {
         r_prime = r0 * (a + 2.0 * b * t);
     }
     return r_prime;
+}
+
+// truncate_f32: Remove digits after "d" decimals.
+fn truncate_f32(fp: f32, d: u8) -> f32 {
+    let mut tmp: f32 = fp * 10f32.powf(d as f32);   // Move decimal sign.
+    tmp -= tmp % 1f32;                              // Remove digits after decimal sign.
+    tmp = tmp.trunc();
+    tmp /= 10f32.powf(d as f32);         // Move decimal sign back.
+    return tmp;
 }

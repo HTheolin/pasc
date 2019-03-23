@@ -22,6 +22,9 @@ use hal::gpio::gpioc::{PC0, PC1, PC2, PC4, PC5};
 use hal::gpio::{Output, PushPull, Alternate, AF5};
 use hal::timer::Timer;
 
+use numtoa::NumToA; // Integers to characters.
+use ryu;            // Floats to characters.
+
 use embedded_hal::spi;
 use crate::pcd8544::{Pcd8544Spi, Pcd8544};
 
@@ -89,15 +92,59 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
+    pub fn update(&mut self) {
+        // Latest values already displayed.
+        if self.data.new_data == false {
+            return;
+        }
+
+        self.device.clear(&mut self.spi);
+
+        // Temperature.
+        let mut buffer = ryu::Buffer::new();
+        let temp = buffer.format(self.data.temp);
+        let temp_suffix: &[u8] = &[b' ', 248, b'C']; // 248 is extended ASCII degree sign.
+        self.device.set_position(&mut self.spi, 0u8, 0u8);
+        self.device.print(&mut self.spi, temp);
+        self.device.print_bytes(&mut self.spi, temp_suffix);
+
+        // Step counter.
+        let mut buffer: [u8; 6] = [0u8; 6];
+        let steps: &[u8] = self.data.step.numtoa(10, &mut buffer); // Base 10.
+        let step_suffix: &[u8] = " steps!".as_bytes();
+        self.device.set_position(&mut self.spi, 0u8, 2u8);
+        self.device.print_bytes(&mut self.spi, steps);
+        self.device.print_bytes(&mut self.spi, step_suffix);
+                
+        self.data.new_data = false;
+    }
+
     // Temperature
     pub fn temp_write(&mut self, temp: f32) {
-        self.data.temp = temp;
+        if self.data.temp != temp {
+            self.data.temp = temp;
+            self.data.new_data = true;
+        }
     }
 
     // Public reads are only needed in debug.
     pub fn temp_read(&self) -> f32 {
         self.data.temp
     }
+
+    // Step counter.
+    pub fn step_add(&mut self) {
+        self.data.step += 1;
+        self.data.new_data = true;
+    }
+
+    pub fn step_reset(&mut self) {
+        self.data.step = 0;
+        self.data.new_data = true;
+    }
+
+    // Pulses per minute.
+    // TODO ...
 
     pub fn write_line(&mut self, row: u8, line: &str) {
         self.device.set_position(&mut self.spi, 0u8, row);
@@ -106,6 +153,10 @@ impl Lcd {
 }
 
 pub struct LcdData {
+    // Flag is set when there is new data since last display update().
+    new_data: bool,
+
+    // Data.
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
     pulse: u32, // Pulse, beats per minute.
@@ -114,6 +165,7 @@ pub struct LcdData {
 impl LcdData{
     pub fn new() -> Self {
         LcdData {
+            new_data: true,
             temp: 0f32,
             step: 0u32,
             pulse: 0u32,

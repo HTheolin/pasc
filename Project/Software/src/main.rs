@@ -78,11 +78,13 @@ const APP: () = {
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
     static mut BPC9: button::PC9  = ();
-    static mut LCD: lcd::Lcd = ();
     // static mut BPB0: button::PB0  = ();
     // static mut BPB1: button::PB1  = ();
     // static mut BPB2: button::PB2  = ();
+    
     static mut I2C1: I2C1 = ();
+
+    static mut LCD: lcd::Lcd = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     
@@ -272,8 +274,8 @@ const APP: () = {
     #[task(resources = [ITM, LCD], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "{:?}", resources.LCD.temp_read());
-        schedule.trace(Instant::now() + (16_000_000).cycles()).unwrap();
+        resources.LCD.update();
+        schedule.trace(Instant::now() + (256_000_000).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
@@ -300,7 +302,7 @@ const APP: () = {
     //     let stim = &mut resources.ITM.stim[0];
     //     let lcd = &mut resources.LCD;
     //     iprintln!(stim, "Button was clicked!");
-    //     lcd.write_line(2, "Button 1!");
+    //     lcd.step_add();
     //     resources.BPB0.clear_pending(&mut resources.EXTI)
     // }
 
@@ -310,7 +312,7 @@ const APP: () = {
     //     let stim = &mut resources.ITM.stim[0];
     //     let lcd = &mut resources.LCD;
     //     iprintln!(stim, "Button was clicked!");
-    //     lcd.write_line(2, "Button 2!");
+    //     lcd.step_reset();
     //     resources.BPB1.clear_pending(&mut resources.EXTI)
     // }
 
