@@ -26,7 +26,7 @@ use hal::gpio::gpioa::{PA5, PA7};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2};
 use hal::gpio::{Output, PushPull, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
-use hal::time::{Hertz, KiloHertz};
+use hal::time::{Hertz, KiloHertz, MilliSeconds};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
 use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
@@ -51,13 +51,18 @@ mod time;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
+use lis3dh::Accelerometer;
 
+const CLOCK: u32 = 64_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
 const ADCFREQUENCY: time::Hertz = time::Hertz(8);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
+
+const SECOND: u32 = CLOCK ;
+const MILLISECOND: u32 = CLOCK / 1000;
 const N: usize = 2;
 // Our error type
 #[derive(Debug)]
@@ -84,7 +89,7 @@ const APP: () = {
     // static mut BPB1: button::PB1  = ();
     // static mut BPB2: button::PB2  = ();
     
-    static mut I2C1: I2C1 = ();
+    static mut LIS3DH: Accelerometer = (); 
 
     static mut LCD: lcd::Lcd = ();
 
@@ -169,8 +174,9 @@ const APP: () = {
 
         let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
-        lis3dh::init(&i2c1, &device.GPIOB, &rcc);
 
+        lis3dh::init(&i2c1, &device.GPIOB, &rcc);
+        let mut accelerometer = lis3dh::Accelerometer::new(i2c1);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -202,15 +208,23 @@ const APP: () = {
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
-        // Enable i2c communication
         let mut buffer = [0; 1];
-        lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
+        accelerometer.who_am_i(&mut buffer).unwrap();
         iprintln!(stim, "I AM {} ", buffer[0]);
-        lis3dh::setup(&i2c1);
-        lis3dh::set_datarate(&i2c1, lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
-        lis3dh::set_range(&i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
+        accelerometer.setup();
+        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
+        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
         iprintln!(stim, "Wrote registers");
-        lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
+        accelerometer.set_click_interrupt(1, 30, 200, 0, 0);
+        // Enable i2c communication
+        // let mut buffer = [0; 1];
+        // lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
+        // iprintln!(stim, "I AM {} ", buffer[0]);
+        // lis3dh::setup(&i2c1);
+        // lis3dh::set_datarate(&i2c1, lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
+        // lis3dh::set_range(&i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
+        // iprintln!(stim, "Wrote registers");
+        // lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
 
         //Enable adc after splash screen!
         adc.enable();
@@ -225,8 +239,7 @@ const APP: () = {
         // BPB0 = button::BPB0;
         // BPB1 = button::BPB1;
         // BPB2 = button::BPB2;
-
-        I2C1 = i2c1;
+        LIS3DH = accelerometer;
         LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
@@ -247,7 +260,7 @@ const APP: () = {
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
         resources.LCD.update();
-        schedule.trace(Instant::now() + (256_000_000).cycles()).unwrap();
+        schedule.trace(Instant::now() + (4*SECOND).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
@@ -300,12 +313,13 @@ const APP: () = {
 
     /// Interrupt for pins 5-9
     // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, LCD])]
+    #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD], schedule = [clear_interrupt])]
     fn EXTI9_5() {
+
         let stim = &mut resources.ITM.stim[0];
 
         let mut data = [0; 6];
-        lis3dh::read_accelerometer(resources.I2C1, &mut data);
+        resources.LIS3DH.read_accelerometer(&mut data);
         let x = (data[0] as u16) << 8 | data[1] as u16;
         let y = (data[2] as u16) << 8 | data[3] as u16;
         let z = (data[4] as u16) << 8 | data[5] as u16;
@@ -313,15 +327,20 @@ const APP: () = {
         let y_g = (y as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
         let z_g = (z as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
         iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
-            
+        
         resources.BPB5.clear_pending(&mut resources.EXTI);
+        //schedule.clear_interrupt(Instant::now() + (500*MILLISECOND).cycles()).unwrap();
         // resources.BPC7.clear_pending(&mut resources.EXTI);
         // resources.BPC8.clear_pending(&mut resources.EXTI);
         // resources.BPC9.clear_pending(&mut resources.EXTI);
         let acc = "Accelerometer values";
         resources.LCD.write_line(3, acc);
     }
-
+    
+    #[task(resources = [BPB5, EXTI])]
+    fn clear_interrupt() {
+        
+    }
     // /// Interrupt for PC13 user btn on the nucleo board.
     // #[interrupt(resources = [ITM, EXTI, BPC13])]
     // fn EXTI15_10() {

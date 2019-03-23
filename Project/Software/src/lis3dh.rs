@@ -106,6 +106,140 @@ pub enum Error<E> {
     I2C(E),
 }
 
+pub struct Axis_g {
+    x_g: f32,
+    y_g: f32,
+    z_g: f32
+}
+
+impl Axis_g {
+    pub fn new() -> Self {
+        Axis_g {
+            x_g: 0f32,
+            y_g: 0f32,
+            z_g: 0f32,
+        }      
+    }
+}
+
+pub struct Accelerometer<> {
+    axis: Axis_g,
+    i2c: I2C1,
+}
+
+impl Accelerometer {
+    pub fn new(i2c1: I2C1) -> Self {
+        Accelerometer {
+            axis: Axis_g::new(),
+            i2c: i2c1,
+        }
+    }
+    /// High res & BDU enabled, DRDY on INT1 and 400Hz datarate
+    pub fn setup(&mut self) {
+        //High res & BDU
+        self.write_register(&mut [LIS3DH_REG_CTRL1, 0x07]).unwrap();
+
+        self.write_register(&mut [LIS3DH_REG_CTRL4, 0x88]).unwrap();
+        //DRDY on INT1
+        self.write_register(&mut [LIS3DH_REG_CTRL3, 0x00]).unwrap();
+        //Interrupt active high = bit 2 set low bit 2 clear 
+        self.write_register(&mut [LIS3DH_REG_CTRL6, 0x00]).unwrap();
+    }
+
+    /// Set datarate for the accelerometer update
+    pub fn set_datarate(&mut self, datarate: Datarate) {
+        let mut ctl1 = [0; 1];
+        self.write_read_register(LIS3DH_REG_CTRL1, &mut ctl1).unwrap();
+        ctl1[0] &= !(0xF0);
+        ctl1[0] |= (datarate as u8) << 4;
+        self.write_register(&mut [LIS3DH_REG_CTRL1, ctl1[0]]).unwrap();
+    }
+
+    /// Sets the range of the accelerometer accurary
+    pub fn set_range(&mut self, range: Range) {
+        let mut r = [0; 1];
+        self.write_read_register(LIS3DH_REG_CTRL4, &mut r).unwrap();
+        r[0] &= !(0x30);
+        r[0] |= (range as u8) << 4;
+        self.write_register(&mut [LIS3DH_REG_CTRL4, r[0]]).unwrap();
+    }
+
+    /// Enable interrupt for clicks, 
+    /// c nr of taps, 0 disable, 1 single, 2 double
+    /// clickthreash, threashold for the interrupt to be set
+    ///     this strongly depend on the range! for 16G, try 5-10
+    ///     for 8G, try 10-20. for 4G try 20-40. for 2G try 40-80
+    ///
+    /// timelimit 
+    /// timelatency latency for interrupt after click was registered
+    /// timewindow How often a click interrupt is allowed
+    /// 
+    pub fn set_click_interrupt(&mut self, c: u8, clickthresh: u8, timelimit: u8, timelatency: u8, timewindow: u8) {
+        if c == 0 {
+            //disable int
+            let mut r = [0; 1];
+            self.write_read_register(LIS3DH_REG_CTRL3, &mut r).unwrap();
+            r[0] &= !(0x80); // turn off I1_CLICK
+            self.write_register(&mut [LIS3DH_REG_CTRL3, r[0]]).unwrap();
+            self.write_register(&mut [LIS3DH_REG_CLICKCFG, 0]).unwrap();
+            return;
+        }
+        // else...
+
+        self.write_register(&mut [LIS3DH_REG_CTRL3, 0x80]).unwrap(); // turn on int1 click
+        self.write_register(&mut [LIS3DH_REG_CTRL5, 0x08]).unwrap(); // latch interrupt on int1
+
+        if c == 1 {
+            self.write_register(&mut [LIS3DH_REG_CLICKCFG, 0x15]).unwrap(); // turn on all axes & singletap
+        } else if c ==2 {
+            self.write_register(&mut [LIS3DH_REG_CLICKCFG, 0x2A]).unwrap(); // turn on all axes & doubletap
+        }
+        self.write_register(&mut [LIS3DH_REG_CLICKTHS, clickthresh]).unwrap(); // arbitrary
+        self.write_register(&mut [LIS3DH_REG_TIMELIMIT, timelimit]).unwrap(); // arbitrary
+        self.write_register(&mut [LIS3DH_REG_TIMELATENCY, timelatency]).unwrap(); // arbitrary
+        self.write_register(&mut [LIS3DH_REG_TIMEWINDOW, timewindow]).unwrap(); // arbitrary
+    }
+
+    pub fn who_am_i(&mut self, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+        enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        let mut rx_buffer = [0; 2];
+        while write(&self.i2c, &mut [LIS3DH_REG_WHOAMI as u8]).is_err() {}
+        while start(&self.i2c).is_err() {};
+        read_ack(&self.i2c, buffer);
+        Ok(())
+    }
+
+    pub fn write_read_register(&mut self, reg: u8, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+        enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        while write(&self.i2c, &mut [reg as u8]).is_err() {}
+        while start(&self.i2c).is_err() {};
+        read_ack(&self.i2c, buffer);
+        Ok(())
+    }
+
+    pub fn write_register(&mut self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+        enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        while write(&self.i2c, data).is_err() {};
+        while stop(&self.i2c).is_err() {};
+        Ok(())
+    }
+
+
+    pub fn read_accelerometer(&mut self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+        // I2Cinterface->write(LIS3DH_REG_OUT_X_L | 0x80);
+        enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        while write(&self.i2c, &mut [LIS3DH_REG_OUT_X_L | 0x80]).is_err() {};
+        while start(&self.i2c).is_err() {};
+        read_ack(&self.i2c, data);
+        Ok(())
+    }
+
+}
+
 pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {
     // # I2C1
     // - SCL = PB6
@@ -282,72 +416,6 @@ fn send_byte(i2c: &I2C1, byte: u8) -> Result<(), nb::Error<I2CError>> {
     Ok(())
 }
 
-/// High res & BDU enabled, DRDY on INT1 and 400Hz datarate
-pub fn setup(i2c: &I2C1) {
-    //High res & BDU
-    write_register(i2c, &mut [LIS3DH_REG_CTRL1, 0x07]).unwrap();
-
-    write_register(i2c, &mut [LIS3DH_REG_CTRL4, 0x88]).unwrap();
-    //DRDY on INT1
-    write_register(i2c, &mut [LIS3DH_REG_CTRL3, 0x10]).unwrap();
-    //Interrupt active high = bit 2 set low bit 2 clear 
-    write_register(i2c, &mut [LIS3DH_REG_CTRL6, 0x00]).unwrap();
-}
-
-/// Set datarate for the accelerometer update
-pub fn set_datarate(i2c: &I2C1, datarate: Datarate) {
-    let mut ctl1 = [0; 1];
-    write_read_register(i2c, LIS3DH_REG_CTRL1, &mut ctl1).unwrap();
-    ctl1[0] &= !(0xF0);
-    ctl1[0] |= (datarate as u8) << 4;
-    write_register(i2c, &mut [LIS3DH_REG_CTRL1, ctl1[0]]).unwrap();
-}
-
-/// Sets the range of the accelerometer accurary
-pub fn set_range(i2c: &I2C1, range: Range) {
-    let mut r = [0; 1];
-    write_read_register(i2c, LIS3DH_REG_CTRL4, &mut r).unwrap();
-    r[0] &= !(0x30);
-    r[0] |= (range as u8) << 4;
-    write_register(i2c, &mut [LIS3DH_REG_CTRL4, r[0]]).unwrap();
-}
-
-/// Enable interrupt for clicks, 
-/// c nr of taps, 0 disable, 1 single, 2 double
-/// clickthreash, threashold for the interrupt to be set
-///     this strongly depend on the range! for 16G, try 5-10
-///     for 8G, try 10-20. for 4G try 20-40. for 2G try 40-80
-///
-/// timelimit 
-/// timelatency latency for interrupt after click was registered
-/// timewindow How often a click interrupt is allowed
-/// 
-pub fn set_click_interrupt(i2c: &I2C1, c: u8, clickthresh: u8, timelimit: u8, timelatency: u8, timewindow: u8) {
-    if c == 0 {
-        //disable int
-        let mut r = [0; 1];
-        write_read_register(i2c, LIS3DH_REG_CTRL3, &mut r).unwrap();
-        r[0] &= !(0x80); // turn off I1_CLICK
-        write_register(i2c, &mut [LIS3DH_REG_CTRL3, r[0]]).unwrap();
-        write_register(i2c, &mut [LIS3DH_REG_CLICKCFG, 0]).unwrap();
-        return;
-    }
-    // else...
-
-    write_register(i2c, &mut [LIS3DH_REG_CTRL3, 0x80]).unwrap(); // turn on int1 click
-    write_register(i2c, &mut [LIS3DH_REG_CTRL5, 0x08]).unwrap(); // latch interrupt on int1
-
-    if c == 1 {
-        write_register(i2c, &mut [LIS3DH_REG_CLICKCFG, 0x15]).unwrap(); // turn on all axes & singletap
-    } else if c ==2 {
-        write_register(i2c, &mut [LIS3DH_REG_CLICKCFG, 0x2A]).unwrap(); // turn on all axes & doubletap
-    }
-    write_register(i2c, &mut [LIS3DH_REG_CLICKTHS, clickthresh]).unwrap(); // arbitrary
-    write_register(i2c, &mut [LIS3DH_REG_TIMELIMIT, timelimit]).unwrap(); // arbitrary
-    write_register(i2c, &mut [LIS3DH_REG_TIMELATENCY, timelatency]).unwrap(); // arbitrary
-    write_register(i2c, &mut [LIS3DH_REG_TIMEWINDOW, timewindow]).unwrap(); // arbitrary
-}
-
 
 /// Send STOP condition
 pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
@@ -361,43 +429,5 @@ pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
     // }
     // Send STOP condition
     i2c.cr1.modify(|_, w| w.stop().set_bit());
-    Ok(())
-}
-
-pub fn who_am_i(i2c: &I2C1, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
-    enable(i2c);
-    while start(i2c).is_err() {};
-    let mut rx_buffer = [0; 2];
-    while write(i2c, &mut [LIS3DH_REG_WHOAMI as u8]).is_err() {}
-    while start(i2c).is_err() {};
-    read_ack(i2c, buffer);
-    Ok(())
-}
-
-pub fn write_read_register(i2c: &I2C1, reg: u8, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
-    enable(i2c);
-    while start(i2c).is_err() {};
-    while write(i2c, &mut [reg as u8]).is_err() {}
-    while start(i2c).is_err() {};
-    read_ack(i2c, buffer);
-    Ok(())
-}
-
-pub fn write_register(i2c: &I2C1, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
-    enable(i2c);
-    while start(i2c).is_err() {};
-    while write(i2c, data).is_err() {};
-    while stop(i2c).is_err() {};
-    Ok(())
-}
-
-
-pub fn read_accelerometer(i2c: &I2C1, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
-    // I2Cinterface->write(LIS3DH_REG_OUT_X_L | 0x80);
-    enable(i2c);
-    while start(i2c).is_err() {};
-    while write(i2c, &mut [LIS3DH_REG_OUT_X_L | 0x80]).is_err() {};
-    while start(i2c).is_err() {};
-    read_ack(i2c, data);
     Ok(())
 }
