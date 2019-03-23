@@ -48,7 +48,6 @@ pub const LIS3DH_REG_TIMEWINDOW: u8 = 0x3D;
 pub const LIS3DH_REG_ACTTHS: u8 = 0x3E;
 pub const LIS3DH_REG_ACTDUR: u8 = 0x3F;
 
-
 pub enum Range
 {
   LIS3DH_RANGE_16_G         = 0b11,   // +/- 16g
@@ -120,17 +119,32 @@ impl Axis_g {
             z_g: 0f32,
         }      
     }
+
+    pub fn x_g(&self) -> f32 {
+        self.x_g
+    }
+    pub fn y_g(&self) -> f32 {
+        self.y_g
+    }
+    pub fn z_g(&self) -> f32 {
+        self.z_g
+    }
 }
 
-pub struct Accelerometer<> {
+pub const TRESHOLDCOUNT: u8 = 20;
+pub struct Accelerometer {
     axis: Axis_g,
+    range: Range,
+    samples: u8,
     i2c: I2C1,
 }
 
 impl Accelerometer {
-    pub fn new(i2c1: I2C1) -> Self {
+    pub fn new(i2c1: I2C1, range: Range) -> Self {
         Accelerometer {
             axis: Axis_g::new(),
+            range: range,
+            samples: 0u8,
             i2c: i2c1,
         }
     }
@@ -144,6 +158,7 @@ impl Accelerometer {
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x00]).unwrap();
         //Interrupt active high = bit 2 set low bit 2 clear 
         self.write_register(&mut [LIS3DH_REG_CTRL6, 0x00]).unwrap();
+
     }
 
     /// Set datarate for the accelerometer update
@@ -157,10 +172,17 @@ impl Accelerometer {
 
     /// Sets the range of the accelerometer accurary
     pub fn set_range(&mut self, range: Range) {
+        self.range = range;
         let mut r = [0; 1];
         self.write_read_register(LIS3DH_REG_CTRL4, &mut r).unwrap();
         r[0] &= !(0x30);
-        r[0] |= (range as u8) << 4;
+        let r_u8 = match self.range {
+            Range::LIS3DH_RANGE_16_G => Range::LIS3DH_RANGE_16_G as u8,
+            Range::LIS3DH_RANGE_8_G => Range::LIS3DH_RANGE_8_G as u8,
+            Range::LIS3DH_RANGE_4_G => Range::LIS3DH_RANGE_4_G as u8,
+            Range::LIS3DH_RANGE_2_G => Range::LIS3DH_RANGE_2_G as u8
+        };
+        r[0] |= (r_u8) << 4;
         self.write_register(&mut [LIS3DH_REG_CTRL4, r[0]]).unwrap();
     }
 
@@ -235,9 +257,35 @@ impl Accelerometer {
         while write(&self.i2c, &mut [LIS3DH_REG_OUT_X_L | 0x80]).is_err() {};
         while start(&self.i2c).is_err() {};
         read_ack(&self.i2c, data);
+        let divider = match self.range {
+            Range::LIS3DH_RANGE_16_G => Divider::DIV_16_G as u16,
+            Range::LIS3DH_RANGE_8_G => Divider::DIV_8_G as u16,
+            Range::LIS3DH_RANGE_4_G => Divider::DIV_4_G as u16,
+            Range::LIS3DH_RANGE_2_G => Divider::DIV_2_G as u16
+        };
+        let x = (data[0] as u16) << 8 | data[1] as u16;
+        let y = (data[2] as u16) << 8 | data[3] as u16;
+        let z = (data[4] as u16) << 8 | data[5] as u16;
+        let x_g = (x as f32) / (divider as f32);
+        let y_g = (y as f32) / (divider as f32);
+        let z_g = (z as f32) / (divider as f32);
+        self.axis.x_g = x_g;
+        self.axis.y_g = y_g;
+        self.axis.z_g = z_g;
         Ok(())
     }
 
+    pub fn axis(&mut self) -> &Axis_g {
+        &self.axis
+    }
+
+    pub fn increment_sample(&mut self) {
+        self.samples.wrapping_add(1);
+    }
+
+    pub fn get_samples(&self) -> u8 {
+        self.samples
+    }
 }
 
 pub fn init(i2c: &I2C1, gpiob: &GPIOB, rcc: &RCC) {

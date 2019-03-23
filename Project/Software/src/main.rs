@@ -48,10 +48,12 @@ mod pcd8544_spi;
 mod pwm;
 mod temp;
 mod time;
+mod pedometer;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
+use pedometer::Pedometer;
 
 const CLOCK: u32 = 64_000_000;
 //use button::{BUTTON, PB0};
@@ -90,11 +92,11 @@ const APP: () = {
     // static mut BPB2: button::PB2  = ();
     
     static mut LIS3DH: Accelerometer = (); 
-
+    static mut PEDOMETER: Pedometer = ();
     static mut LCD: lcd::Lcd = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
-    
+    static mut STEPTIMEOUT: bool = true;
     #[init(resources = [BUFFER], schedule = [trace])]
     fn init() {
         let rcc = device.RCC;
@@ -176,7 +178,7 @@ const APP: () = {
         // Initiates the i2c bus at 100khz
 
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
-        let mut accelerometer = lis3dh::Accelerometer::new(i2c1);
+        let mut accelerometer = lis3dh::Accelerometer::new(i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -215,17 +217,9 @@ const APP: () = {
         accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
         accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
         iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 30, 200, 0, 0);
-        // Enable i2c communication
-        // let mut buffer = [0; 1];
-        // lis3dh::who_am_i(&i2c1, &mut buffer).unwrap();
-        // iprintln!(stim, "I AM {} ", buffer[0]);
-        // lis3dh::setup(&i2c1);
-        // lis3dh::set_datarate(&i2c1, lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
-        // lis3dh::set_range(&i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
-        // iprintln!(stim, "Wrote registers");
-        // lis3dh::set_click_interrupt(&i2c1, 1, 30, 200, 0, 0);
-
+        accelerometer.set_click_interrupt(1, 70, 200, 0, 150);
+      
+        let pedometer = Pedometer::new(0.4);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -240,6 +234,7 @@ const APP: () = {
         // BPB1 = button::BPB1;
         // BPB2 = button::BPB2;
         LIS3DH = accelerometer;
+        PEDOMETER = pedometer;
         LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
@@ -313,33 +308,45 @@ const APP: () = {
 
     /// Interrupt for pins 5-9
     // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD], schedule = [clear_interrupt])]
+    #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD, STEPTIMEOUT, PEDOMETER], schedule = [clear_timeout])]
     fn EXTI9_5() {
 
         let stim = &mut resources.ITM.stim[0];
+        resources.LIS3DH.increment_sample();
 
-        let mut data = [0; 6];
-        resources.LIS3DH.read_accelerometer(&mut data);
-        let x = (data[0] as u16) << 8 | data[1] as u16;
-        let y = (data[2] as u16) << 8 | data[3] as u16;
-        let z = (data[4] as u16) << 8 | data[5] as u16;
-        let x_g = (x as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
-        let y_g = (y as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
-        let z_g = (z as f32) / (lis3dh::Divider::DIV_2_G as u16 as f32);
-        iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
-        
+        if *resources.STEPTIMEOUT {
+            *resources.STEPTIMEOUT = false;
+            let mut data = [0; 6];
+            resources.LIS3DH.read_accelerometer(&mut data).unwrap();
+            
+            iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
+            let direction = resources.PEDOMETER.get_direction();
+            let step = match direction {
+                pedometer::Direction::X => resources.LIS3DH.axis().x_g(),
+                pedometer::Direction::Y => resources.LIS3DH.axis().y_g(),
+                pedometer::Direction::Z => resources.LIS3DH.axis().z_g(),
+            };
+
+            if resources.PEDOMETER.is_step(step) {
+                resources.PEDOMETER.add_step();
+                resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+            }
+            
+            schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+        }
+        if resources.LIS3DH.get_samples() > lis3dh::TRESHOLDCOUNT {
+            resources.PEDOMETER.calc_max(resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
+            resources.PEDOMETER.calc_threshold();
+        }
         resources.BPB5.clear_pending(&mut resources.EXTI);
-        //schedule.clear_interrupt(Instant::now() + (500*MILLISECOND).cycles()).unwrap();
         // resources.BPC7.clear_pending(&mut resources.EXTI);
         // resources.BPC8.clear_pending(&mut resources.EXTI);
         // resources.BPC9.clear_pending(&mut resources.EXTI);
-        let acc = "Accelerometer values";
-        resources.LCD.write_line(3, acc);
     }
     
-    #[task(resources = [BPB5, EXTI])]
-    fn clear_interrupt() {
-        
+    #[task(resources = [STEPTIMEOUT])]
+    fn clear_timeout() {
+        *resources.STEPTIMEOUT = true;
     }
     // /// Interrupt for PC13 user btn on the nucleo board.
     // #[interrupt(resources = [ITM, EXTI, BPC13])]

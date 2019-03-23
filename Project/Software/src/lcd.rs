@@ -143,6 +143,10 @@ impl Lcd {
         self.data.new_data = true;
     }
 
+    pub fn set_steps(&mut self, steps: u32) {
+        self.data.step = steps;
+    }
+
     // Pulses per minute.
     // TODO ...
 
