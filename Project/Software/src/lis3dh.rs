@@ -48,6 +48,8 @@ pub const LIS3DH_REG_TIMEWINDOW: u8 = 0x3D;
 pub const LIS3DH_REG_ACTTHS: u8 = 0x3E;
 pub const LIS3DH_REG_ACTDUR: u8 = 0x3F;
 
+pub const TRESHOLDCOUNT: u8 = 20;
+
 pub enum Range
 {
   LIS3DH_RANGE_16_G         = 0b11,   // +/- 16g
@@ -70,7 +72,6 @@ pub enum Axis
   LIS3DH_AXIS_Y         = 0x1,
   LIS3DH_AXIS_Z         = 0x2,
 }
-
 
 /* Used with register 0x2A (LIS3DH_REG_CTRL_REG1) to set bandwidth */
 pub enum Datarate
@@ -131,7 +132,6 @@ impl Axis_g {
     }
 }
 
-pub const TRESHOLDCOUNT: u8 = 20;
 pub struct Accelerometer {
     axis: Axis_g,
     range: Range,
@@ -148,13 +148,14 @@ impl Accelerometer {
             i2c: i2c1,
         }
     }
+
     /// High res & BDU enabled, DRDY on INT1 and 400Hz datarate
     pub fn setup(&mut self) {
         //High res & BDU
         self.write_register(&mut [LIS3DH_REG_CTRL1, 0x07]).unwrap();
 
         self.write_register(&mut [LIS3DH_REG_CTRL4, 0x88]).unwrap();
-        //DRDY on INT1
+        //no DRDY on INT1
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x00]).unwrap();
         //Interrupt active high = bit 2 set low bit 2 clear 
         self.write_register(&mut [LIS3DH_REG_CTRL6, 0x00]).unwrap();
@@ -222,6 +223,7 @@ impl Accelerometer {
         self.write_register(&mut [LIS3DH_REG_TIMEWINDOW, timewindow]).unwrap(); // arbitrary
     }
 
+    /// Check device ID, should be 51.
     pub fn who_am_i(&mut self, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
         enable(&self.i2c);
         while start(&self.i2c).is_err() {};
@@ -232,6 +234,7 @@ impl Accelerometer {
         Ok(())
     }
 
+    /// Writes a register address to the device then reads the resuld into a buffer
     pub fn write_read_register(&mut self, reg: u8, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
         enable(&self.i2c);
         while start(&self.i2c).is_err() {};
@@ -241,6 +244,7 @@ impl Accelerometer {
         Ok(())
     }
 
+    /// Writes value from a [u8] indo the the register defined as the first element in data
     pub fn write_register(&mut self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
         enable(&self.i2c);
         while start(&self.i2c).is_err() {};
@@ -249,7 +253,8 @@ impl Accelerometer {
         Ok(())
     }
 
-
+    /// read values form x,y,z axis on the device, divides with value based on the range set to approximate G forces
+    /// Stores values into self.axis
     pub fn read_accelerometer(&mut self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
         // I2Cinterface->write(LIS3DH_REG_OUT_X_L | 0x80);
         enable(&self.i2c);
