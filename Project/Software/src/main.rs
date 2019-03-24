@@ -66,6 +66,7 @@ const SPIFREQUENCY: Hertz = Hertz(100);
 const SECOND: u32 = CLOCK ;
 const MILLISECOND: u32 = CLOCK / 1000;
 const N: usize = 2;
+const SAMPLESIZE: usize = 50;
 // Our error type
 #[derive(Debug)]
 pub enum Error {
@@ -217,7 +218,7 @@ const APP: () = {
         accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
         accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
         iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 70, 200, 0, 150);
+        accelerometer.set_click_interrupt(1, 1, 200, 0, 100);
       
         let pedometer = Pedometer::new(0.4);
         //Enable adc after splash screen!
@@ -268,9 +269,9 @@ const APP: () = {
         }) {
             Err(_) => cortex_m::asm::bkpt(),
             Ok(b) => {
-                iprintln!(stim, "{:?}", b[0]);
+                //iprintln!(stim, "{:?}", b[0]);
                 let temp = temp::to_celsius(b[0]);
-                iprintln!(stim, "{:?}", temp);
+                //iprintln!(stim, "{:?}", temp);
                 resources.LCD.temp_write(temp as f32);
             }
         }
@@ -310,21 +311,33 @@ const APP: () = {
     // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
     #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD, STEPTIMEOUT, PEDOMETER], schedule = [clear_timeout])]
     fn EXTI9_5() {
-
         let stim = &mut resources.ITM.stim[0];
-        resources.LIS3DH.increment_sample();
+
+        let mut data = [0; 6];
+        resources.LIS3DH.read_accelerometer(&mut data).unwrap();
+        let x_g = resources.LIS3DH.axis().x_g();
+        let y_g = resources.LIS3DH.axis().y_g();
+        let z_g = resources.LIS3DH.axis().z_g();
+        resources.PEDOMETER.set_samples(x_g, y_g, z_g);
+        if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
+            resources.PEDOMETER.calc_max();
+            resources.PEDOMETER.calc_min();                             
+            resources.PEDOMETER.calc_threshold();
+            iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
+            iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
+            iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
+            resources.PEDOMETER.reset_samples();
+        } else {
+            resources.PEDOMETER.increment_sample();
+        }
 
         if *resources.STEPTIMEOUT {
             *resources.STEPTIMEOUT = false;
-            let mut data = [0; 6];
-            resources.LIS3DH.read_accelerometer(&mut data).unwrap();
-            
-            iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-            let direction = resources.PEDOMETER.get_direction();
-            let step = match direction {
-                pedometer::Direction::X => resources.LIS3DH.axis().x_g(),
-                pedometer::Direction::Y => resources.LIS3DH.axis().y_g(),
-                pedometer::Direction::Z => resources.LIS3DH.axis().z_g(),
+            iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
+            let step = match resources.PEDOMETER.get_direction() {
+                pedometer::Direction::X => x_g,
+                pedometer::Direction::Y => y_g,
+                pedometer::Direction::Z => z_g,
             };
 
             if resources.PEDOMETER.is_step(step) {
@@ -334,10 +347,7 @@ const APP: () = {
             
             schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
         }
-        if resources.LIS3DH.get_samples() > lis3dh::TRESHOLDCOUNT {
-            resources.PEDOMETER.calc_max(resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-            resources.PEDOMETER.calc_threshold();
-        }
+        
         resources.BPB5.clear_pending(&mut resources.EXTI);
         // resources.BPC7.clear_pending(&mut resources.EXTI);
         // resources.BPC8.clear_pending(&mut resources.EXTI);

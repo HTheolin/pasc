@@ -48,7 +48,7 @@ pub const LIS3DH_REG_TIMEWINDOW: u8 = 0x3D;
 pub const LIS3DH_REG_ACTTHS: u8 = 0x3E;
 pub const LIS3DH_REG_ACTDUR: u8 = 0x3F;
 
-pub const TRESHOLDCOUNT: u8 = 20;
+pub const Z_OFFSET: f32 = 1.0;
 
 pub enum Range
 {
@@ -135,7 +135,6 @@ impl Axis_g {
 pub struct Accelerometer {
     axis: Axis_g,
     range: Range,
-    samples: u8,
     i2c: I2C1,
 }
 
@@ -144,17 +143,16 @@ impl Accelerometer {
         Accelerometer {
             axis: Axis_g::new(),
             range: range,
-            samples: 0u8,
             i2c: i2c1,
         }
     }
 
-    /// High res & BDU enabled, DRDY on INT1 and 400Hz datarate
+    /// High res & BDU enabled, DRDY on INT1
     pub fn setup(&mut self) {
-        //High res & BDU
+        //Enable x, y, z axis 
         self.write_register(&mut [LIS3DH_REG_CTRL1, 0x07]).unwrap();
-
-        self.write_register(&mut [LIS3DH_REG_CTRL4, 0x88]).unwrap();
+        //High res & BDU
+        self.write_register(&mut [LIS3DH_REG_CTRL4, 0x08]).unwrap();
         //no DRDY on INT1
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x00]).unwrap();
         //Interrupt active high = bit 2 set low bit 2 clear 
@@ -211,6 +209,7 @@ impl Accelerometer {
 
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x80]).unwrap(); // turn on int1 click
         self.write_register(&mut [LIS3DH_REG_CTRL5, 0x08]).unwrap(); // latch interrupt on int1
+        self.write_register(&mut [LIS3DH_REG_CTRL2, 0x04]).unwrap(); // high pass filter
 
         if c == 1 {
             self.write_register(&mut [LIS3DH_REG_CLICKCFG, 0x15]).unwrap(); // turn on all axes & singletap
@@ -268,28 +267,20 @@ impl Accelerometer {
             Range::LIS3DH_RANGE_4_G => Divider::DIV_4_G as u16,
             Range::LIS3DH_RANGE_2_G => Divider::DIV_2_G as u16
         };
-        let x = (data[0] as u16) << 8 | data[1] as u16;
-        let y = (data[2] as u16) << 8 | data[3] as u16;
-        let z = (data[4] as u16) << 8 | data[5] as u16;
+        let x = data[0] as u16 | (data[1] as u16) << 8;
+        let y = data[2] as u16 | (data[3] as u16) << 8;
+        let z = data[4] as u16| (data[5] as u16) << 8;
         let x_g = (x as f32) / (divider as f32);
         let y_g = (y as f32) / (divider as f32);
         let z_g = (z as f32) / (divider as f32);
         self.axis.x_g = x_g;
         self.axis.y_g = y_g;
-        self.axis.z_g = z_g;
+        self.axis.z_g = z_g - Z_OFFSET;
         Ok(())
     }
-
+    
     pub fn axis(&mut self) -> &Axis_g {
         &self.axis
-    }
-
-    pub fn increment_sample(&mut self) {
-        self.samples.wrapping_add(1);
-    }
-
-    pub fn get_samples(&self) -> u8 {
-        self.samples
     }
 }
 
