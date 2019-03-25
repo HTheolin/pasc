@@ -2,7 +2,8 @@ use libm::F32Ext;
 
 pub const SAMPLELIMIT: usize = 40;
 pub const STEPWINDOW: u32 = 200;
-
+pub const Y_Offset: f32 = 240.0;
+pub const SCALE: f32 = - 12.232415902;
 pub struct Pedometer {
     threshold: f32,
     min_threshold: f32,
@@ -11,6 +12,11 @@ pub struct Pedometer {
     steps: u32,
     vec_samples: [f32; SAMPLELIMIT],
     sample_count: usize,
+    last_values: [f32; 6],
+    last_directions: [f32; 6],
+    last_extremes: [[f32;6];6],
+    last_diff: [f32;6],
+    last_match: i8,
 }
 
 /// Pedometer that uses a dynamic threshold algorith to detect steps. 
@@ -27,6 +33,11 @@ impl Pedometer {
             steps: 0u32,
             vec_samples: [0f32; SAMPLELIMIT],
             sample_count: 0usize,
+            last_values: [0f32; 6],
+            last_directions: [0f32; 6],
+            last_extremes: [[0f32;6];6],
+            last_diff: [0f32;6],
+            last_match: -1,
         }
     }
 
@@ -74,13 +85,64 @@ impl Pedometer {
         vec
     }
 
-    pub fn is_step(&mut self, step: f32) -> bool{
+    pub fn is_step(&mut self, step: f32) -> bool {
         if step > self.threshold && self.max_value - self.min_value > self.min_threshold {
             true
         } else {
             false
         }
     }
+
+    pub fn detect_step(&mut self, values: [f32; 3]) -> bool {
+        let mut is_step = false;
+        let mut v_sum = 0.0;
+
+        for axis in values.iter() {
+            let v = Y_Offset * axis * SCALE;
+            v_sum += v;
+        }
+        
+        let k: usize = 0;
+        let v = v_sum / 3.0;
+
+        let mut direction = 0.0;
+        if v > self.last_values[k] {
+            direction = 1.0;
+        } else if v < self.last_values[k] {
+            direction = -1.0;
+        }
+
+        if direction == - self.last_directions[k] {
+            let mut ext_type = 1;
+            if direction > 0.0 {
+                ext_type = 0;
+            }
+            self.last_extremes[ext_type][k] = self.last_values[k];
+            let mut  diff = self.last_extremes[ext_type][k] - self.last_extremes[1 - ext_type][k];
+            if diff < 0.0 {
+                diff = diff * -1.0;
+            }
+
+            if diff > self.threshold {
+            
+                let is_almost_as_large_as_previous = diff > (self.last_diff[k]*2.0/3.0);
+                let is_previous_large_enough = self.last_diff[k] > (diff/3.0);
+                let is_not_contra = self.last_match != 1 - (ext_type as i8);
+
+                if is_almost_as_large_as_previous && is_previous_large_enough && is_not_contra {            
+                    self.last_match = ext_type as i8;
+                    is_step = true;
+                } else {
+                    self.last_match = -1;
+                }
+            }
+            self.last_diff[k] = diff;
+        }
+        self.last_directions[k] = direction;
+        self.last_values[k] = v;   
+        is_step
+    }
+
 
     pub fn add_step(&mut self) {
         self.steps += 1;

@@ -221,7 +221,7 @@ const APP: () = {
         // iprintln!(stim, "Wrote registers");
         accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
       
-        let pedometer = Pedometer::new(8.0, 1.2);
+        let pedometer = Pedometer::new(10.0, 1.2);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -338,12 +338,21 @@ const APP: () = {
             }
 
             if *resources.STEPTIMEOUT {
-                if resources.PEDOMETER.is_step(vec_g) {
+                if resources.PEDOMETER.detect_step([x_g, y_g, z_g]) {
+                    iprintln!(stim, "Detected a step");
+               
                     resources.PEDOMETER.add_step();
                     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
                     *resources.STEPTIMEOUT = false;
                     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+               
                 }
+                // if resources.PEDOMETER.is_step(vec_g) {
+                //     resources.PEDOMETER.add_step();
+                //     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                //     *resources.STEPTIMEOUT = false;
+                //     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+                // }
             }
             resources.BPB5.clear_pending(&mut resources.EXTI);
         } else if resources.BPC7.is_pressed() {
