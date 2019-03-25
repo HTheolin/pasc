@@ -3,13 +3,6 @@ use libm::F32Ext;
 pub const SAMPLELIMIT: usize = 40;
 pub const STEPWINDOW: u32 = 200;
 
-#[derive(Debug)]
-pub enum Direction {
-    X,
-    Y,
-    Z
-}
-
 pub struct Pedometer {
     threshold: f32,
     min_threshold: f32,

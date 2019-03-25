@@ -24,8 +24,8 @@ use crate::hal::prelude::*;
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
 use hal::gpio::gpioa::{PA5, PA7};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
-use hal::gpio::gpiob::{PB0, PB1, PB2};
-use hal::gpio::{Output, PushPull, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
+use hal::gpio::gpiob::{PB0, PB1, PB2, PB5};
+use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
 use hal::time::{Hertz, KiloHertz, MilliSeconds};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
@@ -84,7 +84,7 @@ const APP: () = {
     static mut BPC13: button::PC13 = ();
 
     static mut BPB5: button::PB5 = ();
-
+    
     // Toggle these to change board
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
@@ -108,6 +108,7 @@ const APP: () = {
         let tim2 = device.TIM2;
         let tim3 = device.TIM3;
         let tim5 = device.TIM5;
+        let tim9 = device.TIM9;
         let spi1 = device.SPI1;
         let exti = device.EXTI;
         let syscfg = device.SYSCFG;
@@ -187,7 +188,6 @@ const APP: () = {
         
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
 
-
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
@@ -221,7 +221,7 @@ const APP: () = {
         // iprintln!(stim, "Wrote registers");
         accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
       
-        let pedometer = Pedometer::new(8.0, 0.9);
+        let pedometer = Pedometer::new(8.0, 1.2);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -235,6 +235,7 @@ const APP: () = {
         // BPB0 = button::BPB0;
         // BPB1 = button::BPB1;
         // BPB2 = button::BPB2;
+
         LIS3DH = accelerometer;
         PEDOMETER = pedometer;
         LCD = lcd;
@@ -310,46 +311,51 @@ const APP: () = {
 
     /// Interrupt for pins 5-9
     // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD, STEPTIMEOUT, PEDOMETER], schedule = [clear_timeout])]
+    #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
+                            EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
+                schedule = [clear_timeout])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
-
-        let mut data = [0; 6];
-        resources.LIS3DH.read_accelerometer(&mut data).unwrap();
-        let x_g = resources.LIS3DH.axis().x_g();
-        let y_g = resources.LIS3DH.axis().y_g();
-        let z_g = resources.LIS3DH.axis().z_g();
-        let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
-        iprintln!(stim, "Vector down: {}", vec_g);
-        resources.PEDOMETER.add_sample(vec_g);
-        if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
-            resources.PEDOMETER.calc_max();
-            resources.PEDOMETER.calc_min();                             
-            resources.PEDOMETER.calc_threshold();
-            iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
-            iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
-            iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
-            resources.PEDOMETER.reset_samples();
-        } else {
-            resources.PEDOMETER.increment_sample();
-        }
-
-        if *resources.STEPTIMEOUT {
-            if resources.PEDOMETER.is_step(vec_g) {
-                resources.PEDOMETER.add_step();
-                resources.LCD.set_steps(resources.PEDOMETER.get_steps());
-                *resources.STEPTIMEOUT = false;
-                schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+        if resources.BPB5.is_pressed() {
+            let mut data = [0; 6];
+            resources.LIS3DH.read_accelerometer(&mut data).unwrap();
+            let x_g = resources.LIS3DH.axis().x_g();
+            let y_g = resources.LIS3DH.axis().y_g();
+            let z_g = resources.LIS3DH.axis().z_g();
+            let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
+            iprintln!(stim, "Vector down: {}", vec_g);
+            resources.PEDOMETER.add_sample(vec_g);
+            if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
+                resources.PEDOMETER.calc_max();
+                resources.PEDOMETER.calc_min();                             
+                resources.PEDOMETER.calc_threshold();
+                iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
+                iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
+                iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
+                resources.PEDOMETER.reset_samples();
+            } else {
+                resources.PEDOMETER.increment_sample();
             }
-        }
-        
-        // let mut click = [0; 1];
-        // resources.LIS3DH.clear_interrupt(&mut click);
 
-        resources.BPB5.clear_pending(&mut resources.EXTI);
-        // resources.BPC7.clear_pending(&mut resources.EXTI);
-        // resources.BPC8.clear_pending(&mut resources.EXTI);
-        // resources.BPC9.clear_pending(&mut resources.EXTI);
+            if *resources.STEPTIMEOUT {
+                if resources.PEDOMETER.is_step(vec_g) {
+                    resources.PEDOMETER.add_step();
+                    resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                    *resources.STEPTIMEOUT = false;
+                    schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+                }
+            }
+            resources.BPB5.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC7.is_pressed() {
+            iprintln!(stim, "Pin 7 I'm high");
+            resources.BPC7.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC8.is_pressed(){
+            iprintln!(stim, "Pin 8 high");
+            resources.BPC8.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC9.is_pressed() {
+            iprintln!(stim, "Pin 9 high");
+            resources.BPC9.clear_pending(&mut resources.EXTI);
+        }    
     }
     
     #[task(resources = [STEPTIMEOUT])]
