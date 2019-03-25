@@ -49,7 +49,7 @@ pub const LIS3DH_REG_ACTTHS: u8 = 0x3E;
 pub const LIS3DH_REG_ACTDUR: u8 = 0x3F;
 
 pub const Z_OFFSET: f32 = 1.0;
-
+pub const GRAVITY_EARTH: f32 = 9.80665;
 pub enum Range
 {
   LIS3DH_RANGE_16_G         = 0b11,   // +/- 16g
@@ -152,11 +152,13 @@ impl Accelerometer {
         //Enable x, y, z axis 
         self.write_register(&mut [LIS3DH_REG_CTRL1, 0x07]).unwrap();
         //High res & BDU
-        self.write_register(&mut [LIS3DH_REG_CTRL4, 0x08]).unwrap();
+        self.write_register(&mut [LIS3DH_REG_CTRL4, 0x88]).unwrap();
         //no DRDY on INT1
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x00]).unwrap();
         //Interrupt active high = bit 2 set low bit 2 clear 
-        self.write_register(&mut [LIS3DH_REG_CTRL6, 0x00]).unwrap();
+        self.write_register(&mut [LIS3DH_REG_CTRL6, 0x02]).unwrap();
+
+        self.write_register(&mut [LIS3DH_REG_CTRL2, 0x00]).unwrap(); // high pass filter
 
     }
 
@@ -209,7 +211,7 @@ impl Accelerometer {
 
         self.write_register(&mut [LIS3DH_REG_CTRL3, 0x80]).unwrap(); // turn on int1 click
         self.write_register(&mut [LIS3DH_REG_CTRL5, 0x08]).unwrap(); // latch interrupt on int1
-        self.write_register(&mut [LIS3DH_REG_CTRL2, 0x04]).unwrap(); // high pass filter
+        self.write_register(&mut [LIS3DH_REG_CTRL2, 0x94]).unwrap(); // high pass filter
 
         if c == 1 {
             self.write_register(&mut [LIS3DH_REG_CLICKCFG, 0x15]).unwrap(); // turn on all axes & singletap
@@ -267,18 +269,36 @@ impl Accelerometer {
             Range::LIS3DH_RANGE_4_G => Divider::DIV_4_G as u16,
             Range::LIS3DH_RANGE_2_G => Divider::DIV_2_G as u16
         };
-        let x = data[0] as u16 | (data[1] as u16) << 8;
-        let y = data[2] as u16 | (data[3] as u16) << 8;
-        let z = data[4] as u16| (data[5] as u16) << 8;
+        let x = data[0] as i16 | (data[1] as i16) << 8;
+        let y = data[2] as i16 | (data[3] as i16) << 8;
+        let z = data[4] as i16 | (data[5] as i16) << 8;
         let x_g = (x as f32) / (divider as f32);
         let y_g = (y as f32) / (divider as f32);
         let z_g = (z as f32) / (divider as f32);
-        self.axis.x_g = x_g;
-        self.axis.y_g = y_g;
-        self.axis.z_g = z_g - Z_OFFSET;
+        self.axis.x_g = x_g * GRAVITY_EARTH;
+        self.axis.y_g = y_g * GRAVITY_EARTH;
+        self.axis.z_g = z_g  * GRAVITY_EARTH;
         Ok(())
     }
-    
+
+    pub fn get_click(&self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+        enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        while write(&self.i2c, &mut [LIS3DH_REG_CLICKSRC]).is_err() {};
+        while start(&self.i2c).is_err() {}; 
+        read_ack(&self.i2c, data);
+        Ok(())
+    }
+
+    pub fn clear_interrupt(&self, data: &mut [u8]) -> Result<(), nb::Error<I2CError>> {
+         enable(&self.i2c);
+        while start(&self.i2c).is_err() {};
+        while write(&self.i2c, &mut [LIS3DH_REG_INT1SRC]).is_err() {};
+        while start(&self.i2c).is_err() {}; 
+        read_ack(&self.i2c, data);
+        Ok(())
+    }
+
     pub fn axis(&mut self) -> &Axis_g {
         &self.axis
     }

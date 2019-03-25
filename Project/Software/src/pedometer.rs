@@ -1,5 +1,6 @@
 pub const SAMPLELIMIT: usize = 50;
 
+#[derive(Debug)]
 pub enum Direction {
     X,
     Y,
@@ -76,12 +77,14 @@ impl Pedometer {
         };
         if biggest > self.min_threshold {
             self.max_value = biggest;
+        } else {
+            self.max_value = self.min_threshold;
         }
     }
     
 
     pub fn calc_min(&mut self) {
-        let mut min = 10.0;
+        let mut min = 100.0;
         
         match self.direction {
             Direction::X => for value in self.x_samples.iter() {
@@ -93,12 +96,12 @@ impl Pedometer {
                                 if *value < min && min != 0.0 {
                                     min = *value;
                                 }
-                            }
+                            },
             Direction::Z => for value in self.z_samples.iter() {
                                 if *value < min && min != 0.0 {
                                     min = *value;
                                 }
-                            }
+                            },
         }
         self.min_value = min;
     }
@@ -137,7 +140,7 @@ impl Pedometer {
 
 
     /// Stores samples read in 3 [f32] with size of SAMPLELIMIT
-    pub fn set_samples(&mut self, x_g: f32, y_g: f32, z_g: f32) {
+    pub fn add_sample(&mut self, x_g: f32, y_g: f32, z_g: f32) {
         if self.sample_count < SAMPLELIMIT {
             self.x_samples[self.sample_count] = x_g;
             self.y_samples[self.sample_count] = y_g;
