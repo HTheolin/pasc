@@ -139,10 +139,10 @@ pub struct Accelerometer {
 }
 
 impl Accelerometer {
-    pub fn new(i2c1: I2C1, range: Range) -> Self {
+    pub fn new(i2c1: I2C1) -> Self {
         Accelerometer {
             axis: Axis_g::new(),
-            range: range,
+            range: Range::LIS3DH_RANGE_2_G,
             i2c: i2c1,
         }
     }

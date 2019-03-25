@@ -177,11 +177,19 @@ const APP: () = {
         button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
-        // let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
-
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
-        let mut accelerometer = lis3dh::Accelerometer::new(i2c1, lis3dh::Range::LIS3DH_RANGE_4_G);
+        // Initiates the accelerometer, set range to 2G for high sensitivity, 
+        // datarate 50 Hz, no need to go faster and enable click interrupts as 20 ms intervall with low threshold
+        let mut accelerometer = lis3dh::Accelerometer::new(i2c1);
+        accelerometer.setup();
+        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
+        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
+        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
+
+        // Instatiates a pedometer with starting threshold as 10G.
+        let pedometer = Pedometer::new(10.0, 1.2);
+        
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -212,16 +220,6 @@ const APP: () = {
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
-        let mut buffer = [0; 1];
-        accelerometer.who_am_i(&mut buffer).unwrap();
-        // iprintln!(stim, "I AM {} ", buffer[0]);
-        accelerometer.setup();
-        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
-        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
-        // iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
-      
-        let pedometer = Pedometer::new(10.0, 1.2);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
