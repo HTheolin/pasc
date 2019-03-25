@@ -82,7 +82,7 @@ impl Pedometer {
     }
 
     pub fn is_step(&mut self, step: f32) -> bool{
-        if step > self.threshold && self.max_value - self.min_value > 1.0 {
+        if step > self.threshold && self.max_value - self.min_value > self.min_threshold {
             true
         } else {
             false

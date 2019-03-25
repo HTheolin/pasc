@@ -56,6 +56,7 @@ use lis3dh::Accelerometer;
 use pedometer::Pedometer;
 
 const CLOCK: u32 = 64_000_000;
+const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
@@ -182,7 +183,7 @@ const APP: () = {
         let mut accelerometer = lis3dh::Accelerometer::new(i2c1, lis3dh::Range::LIS3DH_RANGE_4_G);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
 
@@ -216,11 +217,11 @@ const APP: () = {
         // iprintln!(stim, "I AM {} ", buffer[0]);
         accelerometer.setup();
         accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
-        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_4_G);
+        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
         // iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 2, 100, 0, 20);
+        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
       
-        let pedometer = Pedometer::new(8.0, 0.0);
+        let pedometer = Pedometer::new(8.0, 0.9);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
