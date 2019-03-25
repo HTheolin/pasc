@@ -175,7 +175,7 @@ const APP: () = {
         button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
-        let stim = &mut core.ITM.stim[0];
+        // let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
 
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
@@ -213,14 +213,14 @@ const APP: () = {
        
         let mut buffer = [0; 1];
         accelerometer.who_am_i(&mut buffer).unwrap();
-        iprintln!(stim, "I AM {} ", buffer[0]);
+        // iprintln!(stim, "I AM {} ", buffer[0]);
         accelerometer.setup();
         accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
         accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_4_G);
-        iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 5, 20, 0, 20);
+        // iprintln!(stim, "Wrote registers");
+        accelerometer.set_click_interrupt(1, 2, 100, 0, 20);
       
-        let pedometer = Pedometer::new(1.5);
+        let pedometer = Pedometer::new(8.0, 0.0);
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -256,7 +256,7 @@ const APP: () = {
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
         resources.LCD.update();
-        schedule.trace(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+        schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
@@ -318,9 +318,10 @@ const APP: () = {
         let x_g = resources.LIS3DH.axis().x_g();
         let y_g = resources.LIS3DH.axis().y_g();
         let z_g = resources.LIS3DH.axis().z_g();
-        resources.PEDOMETER.add_sample(x_g, y_g, z_g);
+        let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
+        iprintln!(stim, "Vector down: {}", vec_g);
+        resources.PEDOMETER.add_sample(vec_g);
         if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
-            iprintln!(stim, "Current direction: {:?}", resources.PEDOMETER.get_direction());
             resources.PEDOMETER.calc_max();
             resources.PEDOMETER.calc_min();                             
             resources.PEDOMETER.calc_threshold();
@@ -333,24 +334,16 @@ const APP: () = {
         }
 
         if *resources.STEPTIMEOUT {
-            *resources.STEPTIMEOUT = false;
-            iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", x_g, y_g, z_g);
-            let step = match resources.PEDOMETER.get_direction() {
-                pedometer::Direction::X => x_g,
-                pedometer::Direction::Y => y_g,
-                pedometer::Direction::Z => z_g,
-            };
-
-            if resources.PEDOMETER.is_step(step) {
+            if resources.PEDOMETER.is_step(vec_g) {
                 resources.PEDOMETER.add_step();
                 resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                *resources.STEPTIMEOUT = false;
+                schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
             }
-            
-            schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
         }
         
-        let mut click = [0; 1];
-        resources.LIS3DH.clear_interrupt(&mut click);
+        // let mut click = [0; 1];
+        // resources.LIS3DH.clear_interrupt(&mut click);
 
         resources.BPB5.clear_pending(&mut resources.EXTI);
         // resources.BPC7.clear_pending(&mut resources.EXTI);
