@@ -341,8 +341,8 @@ const APP: () = {
     }
 
     /// Interrupt for pins 5-9
-    // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
+    #[interrupt(resources = [ITM, BPB5,
+    // #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
                             EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
                 schedule = [clear_timeout])]
     fn EXTI9_5() {
@@ -386,16 +386,17 @@ const APP: () = {
                 // }
             }
             resources.BPB5.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC7.is_pressed() {
-            iprintln!(stim, "Pin 7 I'm high");
-            resources.BPC7.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC8.is_pressed(){
-            iprintln!(stim, "Pin 8 high");
-            resources.BPC8.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC9.is_pressed() {
-            iprintln!(stim, "Pin 9 high");
-            resources.BPC9.clear_pending(&mut resources.EXTI);
-        }    
+        }
+        // } else if resources.BPC7.is_pressed() {
+        //     iprintln!(stim, "Pin 7 I'm high");
+        //     resources.BPC7.clear_pending(&mut resources.EXTI);
+        // } else if resources.BPC8.is_pressed(){
+        //     iprintln!(stim, "Pin 8 high");
+        //     resources.BPC8.clear_pending(&mut resources.EXTI);
+        // } else if resources.BPC9.is_pressed() {
+        //     iprintln!(stim, "Pin 9 high");
+        //     resources.BPC9.clear_pending(&mut resources.EXTI);
+        // }    
     }
     
     #[task(resources = [STEPTIMEOUT])]
