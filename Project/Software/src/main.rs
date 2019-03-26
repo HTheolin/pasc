@@ -49,11 +49,13 @@ mod pwm;
 mod temp;
 mod time;
 mod pedometer;
+mod countdowntimer;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
 use pedometer::Pedometer;
+use countdowntimer::CountdownTimer;
 
 const CLOCK: u32 = 64_000_000;
 //use button::{BUTTON, PB0};
@@ -94,6 +96,7 @@ const APP: () = {
     static mut LIS3DH: Accelerometer = (); 
     static mut PEDOMETER: Pedometer = ();
     static mut LCD: lcd::Lcd = ();
+    static mut COUNTDOWNTIMER: CountdownTimer = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     static mut STEPTIMEOUT: bool = true;
@@ -223,6 +226,9 @@ const APP: () = {
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
+
+        let countdowntimer = CountdownTimer::newTimer();
+
         
         BPB5 = button::BPB5;
         // Toggle commeting on these to change board
@@ -240,6 +246,9 @@ const APP: () = {
         DMA2 = dma2;
         EXTI = exti;
         BPC13 = button::BPC13;
+        COUNTDOWNTIMER = countdowntimer;
+
+
     }
 
     #[idle(spawn = [trace])]
@@ -358,6 +367,35 @@ const APP: () = {
         
     //     resources.BPC13.clear_pending(&mut resources.EXTI);
     // }
+
+    #[interrupt(resources = [ITM, EXTI, LCD, COUNTDOWNTIMER], spawn = [start_timer])]
+    fn run_timer(){
+        if /*PC7 interrupt*/ && !(resources.COUNTDOWNTIMER.get_isStarted()){
+            resources.COUNTDOWNTIMER.set_isStarted(true);
+            spawn.start_timer().unwrap();
+        }
+        else if /*PC7  interrupt*/ && resources.COUNTDOWNTIMER.get_isStarted(){
+            resources.COUNTDOWNTIMER.pause_timer();
+        }
+        else if /*PC8 interrupt*/ && !(resources.COUNTDOWNTIMER.get_isStarted()){
+            resources.COUNTDOWNTIMER.set_timer();
+        }
+        else if /*PC9 interrupt*/{
+            resources.COUNTDOWNTIMER.reset_timer();
+        }
+    }
+    
+    #[task(resources = [ITM, LCD, COUNTDOWNTIMER], schedule = [start_timer])]
+    fn start_timer(){
+        if resources.COUNTDOWNTIMER.get_startT() > 0{
+            schedule.start_timer(Instant::now() + (SECOND).cycles()).unwrap();
+            resources.COUNTDOWNTIMER.set_startT(1 as u32);
+        }
+        else{
+            /*Possibly add function call to speaker*/
+            resources.COUNTDOWNTIMER.set_isStarted(false);
+        }  
+    }
 
     extern "C" {
         fn EXTI4();
