@@ -20,9 +20,10 @@ extern crate nb;
 
 use embedded_hal::blocking::i2c::{WriteRead};
 use crate::hal::prelude::*;
+use crate::hal::serial::{config::Config, Event, Rx, Serial, Tx};
 
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
-use hal::gpio::gpioa::{PA5, PA7};
+use hal::gpio::gpioa::{PA5, PA7, PA8, PA9, PA10};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2, PB5};
 use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
@@ -45,8 +46,9 @@ mod lcd;
 mod lis3dh;
 mod pcd8544;
 mod pcd8544_spi;
+mod pulsemeter;
 mod pwm;
-mod temp;
+mod temperature;
 mod time;
 mod pedometer;
 mod filter;
@@ -56,13 +58,15 @@ use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
 use pedometer::Pedometer;
+use pulsemeter::Pulse;
+use temperature::Temperature;
 
 const CLOCK: u32 = 64_000_000;
 const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
-const ADCFREQUENCY: time::Hertz = time::Hertz(8);
+const ADCFREQUENCY: time::Hertz = time::Hertz(16);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
 
@@ -87,6 +91,9 @@ const APP: () = {
 
     static mut BPB5: button::PB5 = ();
     
+    static mut TX: Tx<hal::stm32::USART1> = ();
+    static mut RX: Rx<hal::stm32::USART1> = ();
+
     // Toggle these to change board
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
@@ -95,9 +102,11 @@ const APP: () = {
     // static mut BPB1: button::PB1  = ();
     // static mut BPB2: button::PB2  = ();
     
+    static mut LCD: lcd::Lcd = ();
     static mut LIS3DH: Accelerometer = (); 
     static mut PEDOMETER: Pedometer = ();
-    static mut LCD: lcd::Lcd = ();
+    static mut PULSE: Pulse = ();
+    static mut TEMP: Temperature = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     static mut STEPTIMEOUT: bool = true;
@@ -172,12 +181,12 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
@@ -202,18 +211,38 @@ const APP: () = {
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
 
+        //USART init //
+        let stim = &mut core.ITM.stim[0];
+        iprintln!(stim, "usart-PASC");
+
+        let tx = gpioa.pa9.into_alternate_af7();
+        let rx = gpioa.pa10.into_alternate_af7();
+
+        let mut serial = Serial::usart1(
+            device.USART1,
+            (tx, rx),
+            Config::default().baudrate(115_200.bps()),
+            clocks,
+        )
+        .unwrap(); 
+
+        // generate interrupt on Rxne
+        serial.listen(Event::Rxne);
+        // Separate out the sender and receiver of the serial port
+        let (tx, rx) = serial.split();    
+
         // LCD.
         // To change between boards, comment/uncomment these lines.
         // Also change the macro call in lcd.rs!
 
-        // // Simon PCB LCD.
+        // Simon PCB LCD.
         // let sce  = gpioc.pc0.into_push_pull_output().into();
         // let rst  = gpioc.pc1.into_push_pull_output().into();
         // let dc   = gpioc.pc2.into_push_pull_output().into();
         // let mosi = gpioa.pa7.into_alternate_af5();
         // let sck  = gpioa.pa5.into_alternate_af5();
 
-        // Henrik PCB LCD.
+        // // Henrik PCB LCD.
         let sce  = gpioc.pc5.into_push_pull_output().into();
         let rst  = gpioc.pc4.into_push_pull_output().into();
         let dc   = gpiob.pb0.into_push_pull_output().into();
@@ -222,6 +251,9 @@ const APP: () = {
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
+        let pulse = Pulse::new(ADCFREQUENCY);
+
+        let temp = Temperature::new();
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -235,19 +267,26 @@ const APP: () = {
         // BPB0 = button::BPB0;
         // BPB1 = button::BPB1;
         // BPB2 = button::BPB2;
-
         LIS3DH = accelerometer;
         PEDOMETER = pedometer;
+        PULSE = pulse;
+        TEMP = temp;
         LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
         EXTI = exti;
         BPC13 = button::BPC13;
+
+        // Our split serial
+        TX = tx;
+        RX = rx;    
     }
 
-    #[idle(spawn = [trace])]
+    #[idle(spawn = [trace, temp, pulse])]
     fn idle() -> ! {
         spawn.trace();
+        spawn.temp();
+        spawn.pulse();
         loop {
             asm::wfi();
         }
@@ -259,10 +298,34 @@ const APP: () = {
         let stim = &mut resources.ITM.stim[0];
         resources.LCD.update();
         schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
+
+    }
+
+    /// Temperature doesn't need to be calculated often. It is quite expensive.
+    #[task(resources = [BUFFER, ITM, LCD, TEMP], schedule = [temp])]
+    fn temp() { 
+        resources.LCD.temp_write(resources.TEMP.read());
+        schedule.temp(scheduled + (1 * SECOND).cycles()).unwrap();
+    }
+
+    /// Pulse.
+    #[task(resources = [BUFFER, ITM, LCD, PULSE], schedule = [pulse])]
+    fn pulse() { 
+        let stim = &mut resources.ITM.stim[0];
+        let mut pulse = resources.PULSE;
+        pulse.update();
+
+        iprintln!(stim, "pulse: {}", pulse.pulse);
+        iprintln!(stim, "counts: {}", pulse.counts);
+        iprintln!(stim, "max: {}", pulse.max);
+        iprintln!(stim, "min: {}", pulse.min);
+        iprintln!(stim, "ratio: {}", pulse.ratio);
+        
+        schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
-    #[interrupt(resources = [BUFFER, DMA2, LCD, ITM])]
+    #[interrupt(resources = [BUFFER, DMA2, LCD, ITM, TEMP, PULSE])]
     fn DMA2_STREAM0() {
         let stim = &mut resources.ITM.stim[0];
         match resources.BUFFER.read(resources.DMA2, |x| {
@@ -271,13 +334,54 @@ const APP: () = {
         }) {
             Err(_) => cortex_m::asm::bkpt(),
             Ok(b) => {
-                //iprintln!(stim, "{:?}", b[0]);
-                let temp = temp::to_celsius(b[0]);
-                //iprintln!(stim, "{:?}", temp);
-                resources.LCD.temp_write(temp as f32);
+                resources.TEMP.write_sample(b[0]);
+                resources.PULSE.write_sample(b[1]);
             }
         }
     }
+
+
+    #[task(resources = [ITM])]
+    fn trace_data(byte: u8) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "data {}", byte);
+        // for _ in 0..10000 {
+        //     asm::nop();
+        // }
+    }
+
+    #[task(resources = [ITM])]
+    fn trace_error(error: Error) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "{:?}", error);
+    }
+
+    #[task(resources = [TX], spawn = [trace_error])]
+    fn echo(byte: u8) {
+        let tx = resources.TX;
+
+        if block!(tx.write(byte)).is_err() {
+            let _ = spawn.trace_error(Error::UsartSendOverflow);
+        }
+
+    }
+
+    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo])]
+    fn USART1() {
+        let rx = resources.RX;
+
+        match rx.read() {
+            Ok(byte) => {
+                let _ = spawn.echo(byte);
+                if spawn.trace_data(byte).is_err() {
+                    let _ = spawn.trace_error(Error::RingBufferOverflow);
+                }
+            }
+            Err(_err) => {
+                let _ = spawn.trace_error(Error::UsartReceiveOverflow);
+            }
+        }
+    }    
 
     // /// Interupt for buttons bound to pins px0
     // #[interrupt(resources = [ITM, EXTI, BPB0, LCD])]
@@ -310,7 +414,7 @@ const APP: () = {
     // }
 
     /// Interrupt for pins 5-9
-    // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
+    // #[interrupt(resources = [ITM, BPB5,
     #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
                             EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
                 schedule = [clear_timeout])]
@@ -386,3 +490,4 @@ const APP: () = {
         fn EXTI4();
     }
 };
+
