@@ -20,9 +20,10 @@ extern crate nb;
 
 use embedded_hal::blocking::i2c::{WriteRead};
 use crate::hal::prelude::*;
+use crate::hal::serial::{config::Config, Event, Rx, Serial, Tx};
 
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
-use hal::gpio::gpioa::{PA5, PA7};
+use hal::gpio::gpioa::{PA5, PA7, PA8, PA9, PA10};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
 use hal::gpio::gpiob::{PB0, PB1, PB2, PB5};
 use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
@@ -88,6 +89,9 @@ const APP: () = {
 
     static mut BPB5: button::PB5 = ();
     
+    static mut TX: Tx<hal::stm32::USART1> = ();
+    static mut RX: Rx<hal::stm32::USART1> = ();
+
     // Toggle these to change board
     // static mut BPC7: button::PC7  = ();
     // static mut BPC8: button::PC8  = ();
@@ -175,9 +179,9 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
         button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
@@ -204,6 +208,26 @@ const APP: () = {
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
+
+        //USART init //
+        let stim = &mut core.ITM.stim[0];
+        iprintln!(stim, "usart-PASC");
+
+        let tx = gpioa.pa9.into_alternate_af7();
+        let rx = gpioa.pa10.into_alternate_af7();
+
+        let mut serial = Serial::usart1(
+            device.USART1,
+            (tx, rx),
+            Config::default().baudrate(115_200.bps()),
+            clocks,
+        )
+        .unwrap(); 
+
+        // generate interrupt on Rxne
+        serial.listen(Event::Rxne);
+        // Separate out the sender and receiver of the serial port
+        let (tx, rx) = serial.split();    
 
         // LCD.
         // To change between boards, comment/uncomment these lines.
@@ -250,6 +274,10 @@ const APP: () = {
         DMA2 = dma2;
         EXTI = exti;
         BPC13 = button::BPC13;
+
+        // Our split serial
+        TX = tx;
+        RX = rx;    
     }
 
     #[idle(spawn = [trace, temp, pulse])]
@@ -312,6 +340,49 @@ const APP: () = {
             }
         }
     }
+
+
+    #[task(resources = [ITM])]
+    fn trace_data(byte: u8) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "data {}", byte);
+        // for _ in 0..10000 {
+        //     asm::nop();
+        // }
+    }
+
+    #[task(resources = [ITM])]
+    fn trace_error(error: Error) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "{:?}", error);
+    }
+
+    #[task(resources = [TX], spawn = [trace_error])]
+    fn echo(byte: u8) {
+        let tx = resources.TX;
+
+        if block!(tx.write(byte)).is_err() {
+            let _ = spawn.trace_error(Error::UsartSendOverflow);
+        }
+
+    }
+
+    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo])]
+    fn USART1() {
+        let rx = resources.RX;
+
+        match rx.read() {
+            Ok(byte) => {
+                let _ = spawn.echo(byte);
+                if spawn.trace_data(byte).is_err() {
+                    let _ = spawn.trace_error(Error::RingBufferOverflow);
+                }
+            }
+            Err(_err) => {
+                let _ = spawn.trace_error(Error::UsartReceiveOverflow);
+            }
+        }
+    }    
 
     /// Interupt for buttons bound to pins px0
     #[interrupt(resources = [ITM, EXTI, BPB0, LCD])]
