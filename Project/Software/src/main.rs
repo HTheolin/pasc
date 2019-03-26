@@ -49,6 +49,8 @@ mod pwm;
 mod temp;
 mod time;
 mod pedometer;
+mod filter;
+mod step;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
