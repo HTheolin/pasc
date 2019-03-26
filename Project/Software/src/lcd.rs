@@ -97,7 +97,7 @@ impl Lcd {
         if self.data.new_data == false {
             return;
         }
-
+        
         self.device.clear(&mut self.spi);
 
         // Temperature.
@@ -145,6 +145,7 @@ impl Lcd {
 
     pub fn set_steps(&mut self, steps: u32) {
         self.data.step = steps;
+        self.data.new_data = true;
     }
 
     // Pulses per minute.
@@ -178,6 +179,6 @@ impl LcdData{
 }
 
 // HPCB
-// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);

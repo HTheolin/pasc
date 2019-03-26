@@ -58,6 +58,7 @@ use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
 use pedometer::Pedometer;
+use step::Step;
 use pulsemeter::Pulse;
 use temperature::Temperature;
 
@@ -90,10 +91,10 @@ const APP: () = {
     static mut BPC13: button::PC13 = ();
 
     static mut BPB5: button::PB5 = ();
-    
+
     static mut TX: Tx<hal::stm32::USART1> = ();
     static mut RX: Rx<hal::stm32::USART1> = ();
-
+    static mut SLEEP: u32 = 0;
     // Toggle these to change board
     static mut BPC7: button::PC7  = ();
     static mut BPC8: button::PC8  = ();
@@ -101,10 +102,10 @@ const APP: () = {
     // static mut BPB0: button::PB0  = ();
     // static mut BPB1: button::PB1  = ();
     // static mut BPB2: button::PB2  = ();
-    
     static mut LCD: lcd::Lcd = ();
     static mut LIS3DH: Accelerometer = (); 
-    static mut PEDOMETER: Pedometer = ();
+    // static mut PEDOMETER: Pedometer = ();
+    static mut PEDOMETER: Step = ();
     static mut PULSE: Pulse = ();
     static mut TEMP: Temperature = ();
 
@@ -199,8 +200,8 @@ const APP: () = {
         accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
 
         // Instatiates a pedometer with starting threshold as 10G.
-        let pedometer = Pedometer::new(10.0, 1.2);
-        
+        // let pedometer = Pedometer::new(10.0, 1.2);
+        let pedometer = Step::new(0.5);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -210,10 +211,6 @@ const APP: () = {
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
-
-        //USART init //
-        let stim = &mut core.ITM.stim[0];
-        iprintln!(stim, "usart-PASC");
 
         let tx = gpioa.pa9.into_alternate_af7();
         let rx = gpioa.pa10.into_alternate_af7();
@@ -282,21 +279,38 @@ const APP: () = {
         RX = rx;    
     }
 
-    #[idle(spawn = [trace, temp, pulse])]
+    #[idle(resources = [SLEEP], spawn = [print, trace, temp, pulse])]
     fn idle() -> ! {
+        
         spawn.trace();
         spawn.temp();
         spawn.pulse();
         loop {
+            // let now = Instant::now();
             asm::wfi();
+            // let later = Instant::elapsed(&now);
+            // resources.SLEEP.lock(|sleep| {
+            //     *sleep = later.as_cycles();
+            // });
+            // spawn.print().unwrap();
+            
         }
+    }
+
+    #[task(resources = [ITM, SLEEP])]
+    fn print() {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Sleeping for: {} cycles", resources.SLEEP);
     }
 
     /// Periodic task for your pleasure
     #[task(resources = [ITM, LCD], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
+         let now = Instant::now();
         resources.LCD.update();
+         let later = Instant::elapsed(&now);
+        iprintln!(stim, "LCD update took: {} cycles", later.as_cycles());
         schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
 
     }
@@ -304,7 +318,12 @@ const APP: () = {
     /// Temperature doesn't need to be calculated often. It is quite expensive.
     #[task(resources = [BUFFER, ITM, LCD, TEMP], schedule = [temp])]
     fn temp() { 
+        let stim = &mut resources.ITM.stim[0];
+        let now = Instant::now();
         resources.LCD.temp_write(resources.TEMP.read());
+
+        let later = Instant::elapsed(&now);
+        iprintln!(stim, "Temp took: {} cycles", later.as_cycles());
         schedule.temp(scheduled + (1 * SECOND).cycles()).unwrap();
     }
 
@@ -313,14 +332,16 @@ const APP: () = {
     fn pulse() { 
         let stim = &mut resources.ITM.stim[0];
         let mut pulse = resources.PULSE;
+        let now = Instant::now();
         pulse.update();
 
-        iprintln!(stim, "pulse: {}", pulse.pulse);
-        iprintln!(stim, "counts: {}", pulse.counts);
-        iprintln!(stim, "max: {}", pulse.max);
-        iprintln!(stim, "min: {}", pulse.min);
-        iprintln!(stim, "ratio: {}", pulse.ratio);
-        
+        // iprintln!(stim, "pulse: {}", pulse.pulse);
+        // iprintln!(stim, "counts: {}", pulse.counts);
+        // iprintln!(stim, "max: {}", pulse.max);
+        // iprintln!(stim, "min: {}", pulse.min);
+        // iprintln!(stim, "ratio: {}", pulse.ratio);
+        let later = Instant::elapsed(&now);
+        iprintln!(stim, "pulse took: {} cycles", later.as_cycles());
         schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
     }
 
@@ -421,36 +442,50 @@ const APP: () = {
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
         if resources.BPB5.is_pressed() {
+
             let mut data = [0; 6];
             resources.LIS3DH.read_accelerometer(&mut data).unwrap();
             let x_g = resources.LIS3DH.axis().x_g();
             let y_g = resources.LIS3DH.axis().y_g();
             let z_g = resources.LIS3DH.axis().z_g();
-            let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
-            iprintln!(stim, "Vector down: {}", vec_g);
-            resources.PEDOMETER.add_sample(vec_g);
-            if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
-                resources.PEDOMETER.calc_max();
-                resources.PEDOMETER.calc_min();                             
-                resources.PEDOMETER.calc_threshold();
-                iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
-                iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
-                iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
-                resources.PEDOMETER.reset_samples();
-            } else {
-                resources.PEDOMETER.increment_sample();
-            }
+            //let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
+            // iprintln!(stim, "Vector down: {}", vec_g);
+            // resources.PEDOMETER.add_sample(vec_g);
+            // if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
+            //     resources.PEDOMETER.calc_max();
+            //     resources.PEDOMETER.calc_min();                             
+            //     resources.PEDOMETER.calc_threshold();
+            //     iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
+            //     iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
+            //     iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
+            //     resources.PEDOMETER.reset_samples();
+            // } else {
+            //     resources.PEDOMETER.increment_sample();
+            // }
 
             if *resources.STEPTIMEOUT {
-                if resources.PEDOMETER.detect_step([x_g, y_g, z_g]) {
-                    iprintln!(stim, "Detected a step");
-               
-                    resources.PEDOMETER.add_step();
+                let now = Instant::now();
+                let (vel, step) = resources.PEDOMETER.calc_step(x_g, y_g, z_g);
+                if step {
+                    iprintln!(stim, "Detected a step at velocity: {}", vel);
+                    let later = Instant::elapsed(&now);
+                    // let later = (later.as_cycles() * 1_000) / CLOCK;
+                    iprintln!(stim, "Calc took: {} cycles", later.as_cycles());
+                    
+                    // resources.PEDOMETER.add_step();
                     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
                     *resources.STEPTIMEOUT = false;
                     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
-               
                 }
+                // if resources.PEDOMETER.detect_step([x_g, y_g, z_g]) {
+                //     iprintln!(stim, "Detected a step");
+               
+                //     resources.PEDOMETER.add_step();
+                //     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                //     *resources.STEPTIMEOUT = false;
+                //     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+               
+                // }
                 // if resources.PEDOMETER.is_step(vec_g) {
                 //     resources.PEDOMETER.add_step();
                 //     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
