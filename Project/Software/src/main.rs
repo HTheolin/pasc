@@ -24,8 +24,8 @@ use crate::hal::prelude::*;
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
 use hal::gpio::gpioa::{PA5, PA7};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
-use hal::gpio::gpiob::{PB0, PB1, PB2};
-use hal::gpio::{Output, PushPull, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
+use hal::gpio::gpiob::{PB0, PB1, PB2, PB5};
+use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
 use hal::time::{Hertz, KiloHertz, MilliSeconds};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
@@ -59,6 +59,7 @@ use pulsemeter::Pulse;
 use temperature::Temperature;
 
 const CLOCK: u32 = 64_000_000;
+const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
@@ -69,6 +70,7 @@ const SPIFREQUENCY: Hertz = Hertz(100);
 const SECOND: u32 = CLOCK ;
 const MILLISECOND: u32 = CLOCK / 1000;
 const N: usize = 2;
+const SAMPLESIZE: usize = 50;
 // Our error type
 #[derive(Debug)]
 pub enum Error {
@@ -85,7 +87,7 @@ const APP: () = {
     static mut BPC13: button::PC13 = ();
 
     static mut BPB5: button::PB5 = ();
-
+    
     // Toggle these to change board
     // static mut BPC7: button::PC7  = ();
     // static mut BPC8: button::PC8  = ();
@@ -111,6 +113,7 @@ const APP: () = {
         let tim2 = device.TIM2;
         let tim3 = device.TIM3;
         let tim5 = device.TIM5;
+        let tim9 = device.TIM9;
         let spi1 = device.SPI1;
         let exti = device.EXTI;
         let syscfg = device.SYSCFG;
@@ -179,17 +182,24 @@ const APP: () = {
         button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
-        let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
-
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
-        let mut accelerometer = lis3dh::Accelerometer::new(i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
+        // Initiates the accelerometer, set range to 2G for high sensitivity, 
+        // datarate 50 Hz, no need to go faster and enable click interrupts as 20 ms intervall with low threshold
+        let mut accelerometer = lis3dh::Accelerometer::new(i2c1);
+        accelerometer.setup();
+        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
+        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
+        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
+
+        // Instatiates a pedometer with starting threshold as 10G.
+        let pedometer = Pedometer::new(10.0, 1.2);
+        
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
-
 
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
@@ -215,17 +225,6 @@ const APP: () = {
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
-        let mut buffer = [0; 1];
-        accelerometer.who_am_i(&mut buffer).unwrap();
-        iprintln!(stim, "I AM {} ", buffer[0]);
-        accelerometer.setup();
-        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
-        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
-        iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 70, 200, 0, 150);
-      
-        let pedometer = Pedometer::new(0.4);
-
         let pulse = Pulse::new(ADCFREQUENCY);
 
         let temp = Temperature::new();
@@ -268,7 +267,8 @@ const APP: () = {
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
         resources.LCD.update();
-        schedule.trace(Instant::now() + (3 * SECOND).cycles()).unwrap();
+        schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
+
     }
 
     /// Temperature doesn't need to be calculated often. It is quite expensive.
@@ -340,43 +340,63 @@ const APP: () = {
         resources.BPB2.clear_pending(&mut resources.EXTI)
     }
 
-    // /// Interrupt for pins 5-9
-    // // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    // #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD, STEPTIMEOUT, PEDOMETER], schedule = [clear_timeout])]
-    // fn EXTI9_5() {
+    /// Interrupt for pins 5-9
+    // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
+    #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
+                            EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
+                schedule = [clear_timeout])]
+    fn EXTI9_5() {
+        let stim = &mut resources.ITM.stim[0];
+        if resources.BPB5.is_pressed() {
+            let mut data = [0; 6];
+            resources.LIS3DH.read_accelerometer(&mut data).unwrap();
+            let x_g = resources.LIS3DH.axis().x_g();
+            let y_g = resources.LIS3DH.axis().y_g();
+            let z_g = resources.LIS3DH.axis().z_g();
+            let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
+            iprintln!(stim, "Vector down: {}", vec_g);
+            resources.PEDOMETER.add_sample(vec_g);
+            if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
+                resources.PEDOMETER.calc_max();
+                resources.PEDOMETER.calc_min();                             
+                resources.PEDOMETER.calc_threshold();
+                iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
+                iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
+                iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
+                resources.PEDOMETER.reset_samples();
+            } else {
+                resources.PEDOMETER.increment_sample();
+            }
 
-    //     let stim = &mut resources.ITM.stim[0];
-    //     resources.LIS3DH.increment_sample();
-
-    //     if *resources.STEPTIMEOUT {
-    //         *resources.STEPTIMEOUT = false;
-    //         let mut data = [0; 6];
-    //         resources.LIS3DH.read_accelerometer(&mut data).unwrap();
-            
-    //         iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-    //         let direction = resources.PEDOMETER.get_direction();
-    //         let step = match direction {
-    //             pedometer::Direction::X => resources.LIS3DH.axis().x_g(),
-    //             pedometer::Direction::Y => resources.LIS3DH.axis().y_g(),
-    //             pedometer::Direction::Z => resources.LIS3DH.axis().z_g(),
-    //         };
-
-    //         if resources.PEDOMETER.is_step(step) {
-    //             resources.PEDOMETER.add_step();
-    //             resources.LCD.set_steps(resources.PEDOMETER.get_steps());
-    //         }
-            
-    //         schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
-    //     }
-    //     if resources.LIS3DH.get_samples() > lis3dh::TRESHOLDCOUNT {
-    //         resources.PEDOMETER.calc_max(resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-    //         resources.PEDOMETER.calc_threshold();
-    //     }
-    //     resources.BPB5.clear_pending(&mut resources.EXTI);
-    //     // resources.BPC7.clear_pending(&mut resources.EXTI);
-    //     // resources.BPC8.clear_pending(&mut resources.EXTI);
-    //     // resources.BPC9.clear_pending(&mut resources.EXTI);
-    // }
+            if *resources.STEPTIMEOUT {
+                if resources.PEDOMETER.detect_step([x_g, y_g, z_g]) {
+                    iprintln!(stim, "Detected a step");
+               
+                    resources.PEDOMETER.add_step();
+                    resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                    *resources.STEPTIMEOUT = false;
+                    schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+               
+                }
+                // if resources.PEDOMETER.is_step(vec_g) {
+                //     resources.PEDOMETER.add_step();
+                //     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                //     *resources.STEPTIMEOUT = false;
+                //     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+                // }
+            }
+            resources.BPB5.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC7.is_pressed() {
+            iprintln!(stim, "Pin 7 I'm high");
+            resources.BPC7.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC8.is_pressed(){
+            iprintln!(stim, "Pin 8 high");
+            resources.BPC8.clear_pending(&mut resources.EXTI);
+        } else if resources.BPC9.is_pressed() {
+            iprintln!(stim, "Pin 9 high");
+            resources.BPC9.clear_pending(&mut resources.EXTI);
+        }    
+    }
     
     #[task(resources = [STEPTIMEOUT])]
     fn clear_timeout() {

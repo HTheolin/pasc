@@ -5,7 +5,7 @@ use hal::stm32::{GPIOA, GPIOB, GPIOC};
 use hal::gpio::{Edge};
 
 macro_rules! impl_Button {
-    ($GPIOX:ident, $PXX:ident, $BPXX:ident, $exticri: ident, $extix: ident, $moderx: ident, $pupdrx: ident, $mrx:ident, $trx:ident, $prx:ident, $odrx: ident) => {
+    ($GPIOX:ident, $PXX:ident, $BPXX:ident, $exticri: ident, $extix: ident, $moderx: ident, $pupdrx: ident, $mrx:ident, $trx:ident, $prx:ident, $idrx: ident) => {
         /// Button connected to pin Pxx
         pub const $BPXX: $PXX = $PXX;
 
@@ -14,7 +14,7 @@ macro_rules! impl_Button {
 
         impl $PXX {
 
-            pub fn init(&self, gpiox: &$GPIOX, rcc: &RCC, syscfg: &SYSCFG, exti: &EXTI, edge: Edge, pullUp: bool) {
+            pub fn init(&self, gpiox: &$GPIOX, rcc: &RCC, syscfg: &SYSCFG, exti: &EXTI, edge: Edge, is_pullup: bool) {
                 
                 if gpiox.type_id() == TypeId::of::<GPIOA>() {
                    rcc.ahb1enr.modify(|_, w| w.gpioaen().set_bit());
@@ -26,7 +26,7 @@ macro_rules! impl_Button {
                 
                 // Configure PC13 as input with pull-downs, RM0368 Table 23
                 gpiox.moder.modify(|_, w| w.$moderx().bits(0) );
-                if pullUp {
+                if is_pullup {
                     gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b01) });
                 } else {
                     gpiox.pupdr.modify(|_, w| unsafe { w.$pupdrx().bits(0b10) });
@@ -69,8 +69,8 @@ macro_rules! impl_Button {
 
             }
             /// True if button is pressed, false otherwise.
-            pub fn is_pressed(&self, gpiox: &$GPIOX) -> bool {
-                gpiox.odr.read().$odrx().bit_is_clear()
+            pub fn is_pressed(&self) -> bool {
+                 unsafe { (*$GPIOX::ptr()).idr.read().$idrx().bit_is_set() }
             }
 
             /// Clear the pending external interrupt line used by the button, PR13
@@ -82,11 +82,11 @@ macro_rules! impl_Button {
     }
 }
  
-impl_Button!(GPIOC, PC7, BPC7, exticr2, exti7, moder7, pupdr7, mr7, tr7, pr7, odr7);
-impl_Button!(GPIOC, PC8, BPC8, exticr3, exti8, moder8, pupdr8, mr8, tr8, pr8, odr8);
-impl_Button!(GPIOC, PC9, BPC9, exticr3, exti9, moder9, pupdr9, mr9, tr9, pr9, odr9);
-impl_Button!(GPIOB, PB0, BPB0, exticr1, exti0, moder0, pupdr0, mr0, tr0, pr0, odr0);
-impl_Button!(GPIOB, PB1, BPB1, exticr1, exti1, moder1, pupdr1, mr1, tr1, pr1, odr1);
-impl_Button!(GPIOB, PB2, BPB2, exticr1, exti2, moder2, pupdr2, mr2, tr2, pr2, odr2);
-impl_Button!(GPIOB, PB5, BPB5, exticr2, exti5, moder5, pupdr5, mr5, tr5, pr5, odr5);
-impl_Button!(GPIOC, PC13, BPC13, exticr4, exti13, moder13, pupdr13, mr13, tr13, pr13, odr13);
+impl_Button!(GPIOC, PC7, BPC7, exticr2, exti7, moder7, pupdr7, mr7, tr7, pr7, idr7);
+impl_Button!(GPIOC, PC8, BPC8, exticr3, exti8, moder8, pupdr8, mr8, tr8, pr8, idr8);
+impl_Button!(GPIOC, PC9, BPC9, exticr3, exti9, moder9, pupdr9, mr9, tr9, pr9, idr9);
+impl_Button!(GPIOB, PB0, BPB0, exticr1, exti0, moder0, pupdr0, mr0, tr0, pr0, idr0);
+impl_Button!(GPIOB, PB1, BPB1, exticr1, exti1, moder1, pupdr1, mr1, tr1, pr1, idr1);
+impl_Button!(GPIOB, PB2, BPB2, exticr1, exti2, moder2, pupdr2, mr2, tr2, pr2, idr2);
+impl_Button!(GPIOB, PB5, BPB5, exticr2, exti5, moder5, pupdr5, mr5, tr5, pr5, idr5);
+impl_Button!(GPIOC, PC13, BPC13, exticr4, exti13, moder13, pupdr13, mr13, tr13, pr13, idr13);
