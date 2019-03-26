@@ -179,9 +179,9 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
         button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
