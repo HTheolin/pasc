@@ -30,7 +30,7 @@ use crate::pcd8544::{Pcd8544Spi, Pcd8544};
 use crate::heart::HEART;
 use crate::rip::RIP;
 
-const SENSOR_RATIO: f32 = 1.4;
+const SENSOR_RATIO: f32 = 2;
 
 // Change macro call at bottom of this file to change board.
 //      Simon PCB (SPCB): DC is PC2, SCE is PC0.
@@ -43,6 +43,7 @@ macro_rules! implement_lcd {
             device: Pcd8544Spi<$dc, $sce>,
             rst: $rst,
             is_drawn: bool,
+            is_rip: bool,
         }
         
         impl Lcd {
@@ -67,7 +68,7 @@ macro_rules! implement_lcd {
                     spi1,
                     (sck, miso, mosi),
                     spi_mode,
-                    1000000.hz(),
+                    4000000.hz(),
                     clocks,
                 );
 
@@ -89,6 +90,7 @@ macro_rules! implement_lcd {
                     device: pcd8544,
                     rst: rst,
                     is_drawn: false,
+                    is_rip: false,
                 };
 
                 return lcd;
@@ -120,9 +122,13 @@ impl Lcd {
                 self.device.draw_buffer_horizontal(&mut self.spi, &HEART);
                 self.is_drawn = !self.is_drawn;
             }
+            self.is_rip = false;
             
         } else {
-            self.device.draw_buffer_horizontal(&mut self.spi, &RIP);
+            if !self.is_rip {
+                self.device.draw_buffer_horizontal(&mut self.spi, &RIP);
+                self.is_rip = !self.is_rip;
+            }
             self.is_drawn = false;
             self.data.new_data = false;
             return;
@@ -255,6 +261,6 @@ impl LcdData{
 }
 
 // HPCB
-// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
