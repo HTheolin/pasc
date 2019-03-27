@@ -197,11 +197,11 @@ const APP: () = {
         accelerometer.setup();
         accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
         accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
-        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
+        accelerometer.set_click_interrupt(1, 1, 20, 0, 20);
 
-        // Instatiates a pedometer with starting threshold as 10G.
+        // Instatiates a pedometer with starting threshold as ~1G.
         // let pedometer = Pedometer::new(10.0, 1.2);
-        let pedometer = Step::new(0.3, 0.01);
+        let pedometer = Step::new(1.0, 0.4);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -431,13 +431,12 @@ const APP: () = {
 
             let mut data = [0; 6];
             resources.LIS3DH.read_accelerometer(&mut data).unwrap();
-            let x_g = resources.LIS3DH.axis().x_g();
-            let y_g = resources.LIS3DH.axis().y_g();
-            let z_g = resources.LIS3DH.axis().z_g();
             let now = Instant::now();
-            resources.PEDOMETER.add_sample(x_g, y_g, z_g);
+            resources.PEDOMETER.add_sample(resources.LIS3DH.axis().x_g(), 
+                                            resources.LIS3DH.axis().y_g(), 
+                                            resources.LIS3DH.axis().z_g());
             let later = Instant::elapsed(&now);
-            iprintln!(stim, "Filter Calc took: {} cycles", later.as_cycles());
+            // iprintln!(stim, "Filter Calc took: {} cycles", later.as_cycles());
             //let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
             // iprintln!(stim, "Vector down: {}", vec_g);
             // resources.PEDOMETER.add_sample(vec_g);
@@ -455,18 +454,18 @@ const APP: () = {
 
             if *resources.STEPTIMEOUT {
                 let now = Instant::now();
-                let (vel, step) = resources.PEDOMETER.detect_step();
+                let (vel, diff, last, step) = resources.PEDOMETER.detect_step();
                 let later = Instant::elapsed(&now);
                 // iprintln!(stim, "Calc took: {} cycles", later.as_cycles());
                 iprintln!(stim, "Threshold is: : {}", resources.PEDOMETER.get_threshold());
-                
+                iprintln!(stim, "Diffs are: : {} {}", last, diff);              
                 if step {
                     iprintln!(stim, "Detected a step at velocity: {}", vel);
                     
                     // let later = (later.as_cycles() * 1_000) / CLOCK;
                     
                     
-                    // resources.PEDOMETER.add_step();
+                    resources.PEDOMETER.add_step();
                     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
                     *resources.STEPTIMEOUT = false;
                     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
