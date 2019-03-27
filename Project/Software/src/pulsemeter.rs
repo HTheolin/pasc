@@ -36,6 +36,7 @@ impl Pulse {
         self.pulse
     }
 
+    // Consumes around 40k cycles
     pub fn update(&mut self) {
         self.new_max_min();
         self.new_ratio();

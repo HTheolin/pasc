@@ -30,8 +30,6 @@ use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edg
 use hal::time::{Hertz, KiloHertz, MilliSeconds};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
-use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
-// use hal::prelude::_embedded_hal_blocking_i2c_WriteRead as WriteRead;
 
 use rtfm::{app, Instant};
 
@@ -54,6 +52,8 @@ mod pedometer;
 mod filter;
 mod step;
 mod countdowntimer;
+mod heart;
+mod rip;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
@@ -145,20 +145,19 @@ const APP: () = {
         );
 
         //Enable pwm for driving the lcd contrast, tim3 channel 1 = PC6 (Henrik), = PA6 (Simon)
-        // let mut pwm = pwm::Pwm(&tim3);
-        // let c = &Channel::_1;
-        // pwm.init(
-        //     LCDFREQUENCY.invert(),
-        //     *c,
-        //     None,
-        //     &device.GPIOA,
-        //     &device.GPIOB,
-        //     &device.GPIOC,
-        //     &rcc,
-        // );
-        // pwm.set_duty(*c, pwm.get_max_duty() / 2);
-        // pwm.enable(*c);
-        // iprintln!(stim, "{:?}", pwm.get_max_duty()/2);
+        let mut pwm = pwm::Pwm(&tim3);
+        let c = &Channel::_1;
+        pwm.init(
+            LCDFREQUENCY.invert(),
+            *c,
+            None,
+            &device.GPIOA,
+            &device.GPIOB,
+            &device.GPIOC,
+            &rcc,
+        );
+        pwm.set_duty(*c, pwm.get_max_duty() / 2);
+        pwm.enable(*c);
 
         //Enable ADC converting on adc channel IN_0 (PA0) and IN_1 (PA1), uses pwm to trigger converting and uses DMA2_STREAM0
         //interrupt to print values from the buffer.
@@ -316,7 +315,7 @@ const APP: () = {
         resources.LCD.temp_write(resources.TEMP.read());
 
         let later = Instant::elapsed(&now);
-        // iprintln!(stim, "Temp took: {} cycles", later.as_cycles());
+        iprintln!(stim, "Temp took: {} cycles", later.as_cycles());
         schedule.temp(scheduled + (1 * SECOND).cycles()).unwrap();
     }
 
@@ -327,15 +326,17 @@ const APP: () = {
 
         let mut pulse = resources.PULSE;
         let now = Instant::now();
-       // pulse.update();
-        
+        pulse.update();
+        resources.LCD.set_pulse_ratio(pulse.ratio);
+        resources.LCD.set_pulse(pulse.pulse);
+
         // iprintln!(stim, "pulse: {}", pulse.pulse);
         // iprintln!(stim, "counts: {}", pulse.counts);
         // iprintln!(stim, "max: {}", pulse.max);
         // iprintln!(stim, "min: {}", pulse.min);
-        // iprintln!(stim, "ratio: {}", pulse.ratio);
+        iprintln!(stim, "ratio: {}", pulse.ratio);
         let later = Instant::elapsed(&now);
-        // iprintln!(stim, "pulse took: {} cycles", later.as_cycles());
+        iprintln!(stim, "pulse took: {} cycles", later.as_cycles());
         schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
     }
 
@@ -347,7 +348,7 @@ const APP: () = {
                 let buf: [u16; N] = x.clone();
                 buf
         }) {
-            Err(_) => cortex_m::asm::bkpt(),
+            Err(_) => cortex_m::asm::nop(),
             Ok(b) => {
                 resources.TEMP.write_sample(b[0]);
                 resources.PULSE.write_sample(b[1]);
@@ -448,21 +449,18 @@ const APP: () = {
     //     let lcd = &mut resources.LCD;
     //     iprintln!(stim, "Button was clicked!");
     //     lcd.write_line(2, "Button 3!");
-        
     //     resources.BPB2.clear_pending(&mut resources.EXTI)
     // }
 
     /// Interrupt for pins 5-9
     #[interrupt(resources = [
-    // #[interrupt(resources = [BPC7, BPC8, BPC9, 
+                            // BPC7, BPC8, BPC9, 
                             ITM, BPB5, EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER, COUNTDOWNTIMER], 
                 schedule = [clear_timeout, reset_request],
                 spawn = [start_timer])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
-        // iprintln!(stim, "Button click");
         if resources.BPB5.is_pressed() {
-
             let mut data = [0; 6];
             resources.LIS3DH.read_accelerometer(&mut data).unwrap();
             let now = Instant::now();
@@ -545,7 +543,7 @@ const APP: () = {
         }  
     }
 
-    // #[task(resources = [BPC7, COUNTDOWNTIMER])]
+    // #[task(resources = [BPC7, COUNTDOWNTIMER, LCD])]
     #[task(resources = [BPB0, COUNTDOWNTIMER, LCD])]
     fn reset_request(){
         /*Henriks bräda*/
@@ -573,7 +571,6 @@ const APP: () = {
         
         resources.TIM2.ccer.modify(|_, w| w.cc1e().set_bit());    //Enable
     }
-
 
     extern "C" {
         fn EXTI4();
