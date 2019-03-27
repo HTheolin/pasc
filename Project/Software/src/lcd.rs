@@ -67,7 +67,7 @@ macro_rules! implement_lcd {
                     spi1,
                     (sck, miso, mosi),
                     spi_mode,
-                    4000000.hz(),
+                    1000000.hz(),
                     clocks,
                 );
 
@@ -146,12 +146,23 @@ impl Lcd {
         self.device.print_bytes(&mut self.spi, step_suffix);
 
         //Time Countdown
-        let mut buffer: [u8; 6] = [0u8; 6];
-        let countdown: &[u8] = self.data.countdown.numtoa(10, &mut buffer); // Base 10.
-        let countdown_suffix: &[u8] = "Time remaining: ".as_bytes();
+        let mut buffer = ryu::Buffer::new();
+        let countdown = buffer.format(self.data.countdown);
+        let countdown_suffix: &[u8] = "Sec: ".as_bytes();
         self.device.set_position(&mut self.spi, 0u8, 4u8);
         self.device.print_bytes(&mut self.spi, countdown_suffix);
-        self.device.print_bytes(&mut self.spi, countdown);
+        self.device.print(&mut self.spi, countdown);
+                
+        // Pulse
+        let mut buffer = ryu::Buffer::new();
+        let pulse = buffer.format(self.data.pulse);
+        let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
+        self.device.set_position(&mut self.spi, 0u8, 3u8);
+        self.device.print(&mut self.spi, pulse);
+        self.device.print_bytes(&mut self.spi, pulse_suffix);
+
+
+
 
         self.data.new_data = false;
     }
@@ -202,12 +213,12 @@ impl Lcd {
 
     // Countdown time per second.
     pub fn set_countdown(&mut self, countdown: u32){
-        self.data.countdown = countdown;
+        self.data.countdown = countdown as f32;
         self.data.new_data = true;
     }
 
     pub fn reset_countdown(&mut self){
-        self.data.countdown = 0;
+        self.data.countdown = 0 as f32;
         self.data.new_data = true;
     }
 
@@ -226,7 +237,7 @@ pub struct LcdData {
     step: u32, // Step counter.
     pulse: f32, // Pulse, beats per minute.
     pulse_ratio: f32, // Maximum value read sensor
-    countdown: u32, //Time countdown per second.
+    countdown: f32, //Time countdown per second.
 }
 
 impl LcdData{
@@ -237,12 +248,12 @@ impl LcdData{
             step: 0u32,
             pulse: 0f32,
             pulse_ratio: 0f32,
-            countdown: 0u32,
+            countdown: 0f32,
         }
     }
 }
 
 // HPCB
-implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
