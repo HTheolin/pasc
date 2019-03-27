@@ -1,8 +1,9 @@
 use crate::filter::Filter;
-
+/// Size of the sample buffer
 const ACCEL_RING_SIZE: usize = 50;
 const VEL_RING_SIZE: usize = 10;
 const THRESHOLD_SIZE: usize = 50;
+/// Divider to compensate the max / min ratio as diff 
 const THRESHOLD_DIVITER: f32 = 20.0;
 
 pub struct Step {
@@ -16,13 +17,14 @@ pub struct Step {
     vel_ring_counter: usize,
     vel_ring: [f32; VEL_RING_SIZE],
     steps: u32,
-    last_directions: [f32; 6],
-    last_extremes: [[f32;6];6],
+    last_direction: f32,
+    last_extremes: [[f32;2];1],
     last_diff: f32,
     last_velocity: f32,
     last_match: i8,
 }
 
+/// Pedometer that uses ring buffers and filtering to determine the world z and estimate velocity. 
 impl Step {
     pub fn new(threshold: f32, min_threshold: f32) -> Self {
         Step {
@@ -36,8 +38,8 @@ impl Step {
             vel_ring_counter: 0usize,
             vel_ring: [0f32; VEL_RING_SIZE],
             steps: 0u32,
-            last_directions: [0f32; 6],
-            last_extremes: [[0f32;6];6],
+            last_direction: 0f32,
+            last_extremes: [[0f32;2];1],
             last_velocity: 0f32,
             last_diff: 0f32,
             last_match: -1,
@@ -87,7 +89,7 @@ impl Step {
     }
 
     /// Determines from the values on the buffer is a step has been taken
-    pub fn detect_step(&mut self) -> (f32, f32, f32,  bool) {
+    pub fn detect_step(&mut self) -> bool {
         let mut is_step = false;
         let mut last = 0.0;
         let current_velocity = self.vel_estimate_samples[self.accel_ring_counter % ACCEL_RING_SIZE];
@@ -102,7 +104,7 @@ impl Step {
 
         let k: usize = 0;
 
-        if direction == - self.last_directions[k] {
+        if direction == - self.last_direction {
             let mut ext_type = 1;
             if direction > 0.0 {
                 ext_type = 0;
@@ -130,10 +132,10 @@ impl Step {
             self.last_diff = diff;
             
         }
-        self.last_directions[k] = direction;
+        self.last_direction = direction;
         self.last_velocity = current_velocity;
  
-        (self.vel_estimate_samples[self.accel_ring_counter % ACCEL_RING_SIZE], self.last_diff, last, is_step)
+        is_step
     }
     
     pub fn calc_min_max(&mut self) {
