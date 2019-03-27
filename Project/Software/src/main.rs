@@ -66,7 +66,7 @@ const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
-const ADCFREQUENCY: time::Hertz = time::Hertz(16);
+const ADCFREQUENCY: time::Hertz = time::Hertz(32);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
 
@@ -317,16 +317,19 @@ const APP: () = {
     #[task(resources = [BUFFER, ITM, LCD, PULSE], schedule = [pulse])]
     fn pulse() { 
         let stim = &mut resources.ITM.stim[0];
-        let mut pulse = resources.PULSE;
-        pulse.update();
+        
+        resources.PULSE.lock(|pulse| {
+            pulse.update();
+        });
 
+        let pulse = resources.PULSE;
         iprintln!(stim, "pulse: {}", pulse.pulse);
         iprintln!(stim, "counts: {}", pulse.counts);
         iprintln!(stim, "max: {}", pulse.max);
         iprintln!(stim, "min: {}", pulse.min);
         iprintln!(stim, "ratio: {}", pulse.ratio);
         
-        schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
+        schedule.pulse(scheduled + (6 * SECOND).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
