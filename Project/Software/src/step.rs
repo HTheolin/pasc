@@ -17,8 +17,8 @@ pub struct Step {
     vel_ring_counter: usize,
     vel_ring: [f32; VEL_RING_SIZE],
     steps: u32,
-    last_direction: f32,
-    last_extremes: [[f32;2];1],
+    last_directions: [f32; 2],
+    last_extremes: [[f32;2];2],
     last_diff: f32,
     last_velocity: f32,
     last_match: i8,
@@ -38,8 +38,8 @@ impl Step {
             vel_ring_counter: 0usize,
             vel_ring: [0f32; VEL_RING_SIZE],
             steps: 0u32,
-            last_direction: 0f32,
-            last_extremes: [[0f32;2];1],
+            last_directions: [0f32; 2],
+            last_extremes: [[0f32;2];2],
             last_velocity: 0f32,
             last_diff: 0f32,
             last_match: -1,
@@ -91,7 +91,6 @@ impl Step {
     /// Determines from the values on the buffer is a step has been taken
     pub fn detect_step(&mut self) -> bool {
         let mut is_step = false;
-        let mut last = 0.0;
         let current_velocity = self.vel_estimate_samples[self.accel_ring_counter % ACCEL_RING_SIZE];
        
         // Check if current velocity is larger or smaller then last to determine the direcion of the slope
@@ -104,7 +103,7 @@ impl Step {
 
         let k: usize = 0;
 
-        if direction == - self.last_direction {
+        if direction == - self.last_directions[k] {
             let mut ext_type = 1;
             if direction > 0.0 {
                 ext_type = 0;
@@ -128,11 +127,9 @@ impl Step {
                     self.last_match = -1;
                 }
             }
-            last = self.last_diff;
-            self.last_diff = diff;
-            
+            self.last_diff = diff;   
         }
-        self.last_direction = direction;
+        self.last_directions[k] = direction;
         self.last_velocity = current_velocity;
  
         is_step

@@ -67,7 +67,7 @@ const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
-const ADCFREQUENCY: time::Hertz = time::Hertz(16);
+const ADCFREQUENCY: time::Hertz = time::Hertz(64);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
 
@@ -96,12 +96,12 @@ const APP: () = {
     static mut RX: Rx<hal::stm32::USART1> = ();
     static mut SLEEP: u32 = 0;
     // Toggle these to change board
-    static mut BPC7: button::PC7  = ();
-    static mut BPC8: button::PC8  = ();
-    static mut BPC9: button::PC9  = ();
-    // static mut BPB0: button::PB0  = ();
-    // static mut BPB1: button::PB1  = ();
-    // static mut BPB2: button::PB2  = ();
+    // static mut BPC7: button::PC7  = ();
+    // static mut BPC8: button::PC8  = ();
+    // static mut BPC9: button::PC9  = ();
+    static mut BPB0: button::PB0  = ();
+    static mut BPB1: button::PB1  = ();
+    static mut BPB2: button::PB2  = ();
     static mut LCD: lcd::Lcd = ();
     static mut LIS3DH: Accelerometer = (); 
     // static mut PEDOMETER: Pedometer = ();
@@ -182,12 +182,12 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
@@ -233,18 +233,18 @@ const APP: () = {
         // Also change the macro call in lcd.rs!
 
         // Simon PCB LCD.
-        // let sce  = gpioc.pc0.into_push_pull_output().into();
-        // let rst  = gpioc.pc1.into_push_pull_output().into();
-        // let dc   = gpioc.pc2.into_push_pull_output().into();
-        // let mosi = gpioa.pa7.into_alternate_af5();
-        // let sck  = gpioa.pa5.into_alternate_af5();
-
-        // // Henrik PCB LCD.
-        let sce  = gpioc.pc5.into_push_pull_output().into();
-        let rst  = gpioc.pc4.into_push_pull_output().into();
-        let dc   = gpiob.pb0.into_push_pull_output().into();
+        let sce  = gpioc.pc0.into_push_pull_output().into();
+        let rst  = gpioc.pc1.into_push_pull_output().into();
+        let dc   = gpioc.pc2.into_push_pull_output().into();
         let mosi = gpioa.pa7.into_alternate_af5();
         let sck  = gpioa.pa5.into_alternate_af5();
+
+        // // Henrik PCB LCD.
+        // let sce  = gpioc.pc5.into_push_pull_output().into();
+        // let rst  = gpioc.pc4.into_push_pull_output().into();
+        // let dc   = gpiob.pb0.into_push_pull_output().into();
+        // let mosi = gpioa.pa7.into_alternate_af5();
+        // let sck  = gpioa.pa5.into_alternate_af5();
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
@@ -257,13 +257,13 @@ const APP: () = {
         
         BPB5 = button::BPB5;
         // Toggle commeting on these to change board
-        BPC7 = button::BPC7;
-        BPC8 = button::BPC8;
-        BPC9 = button::BPC9;
+        // BPC7 = button::BPC7;
+        // BPC8 = button::BPC8;
+        // BPC9 = button::BPC9;
 
-        // BPB0 = button::BPB0;
-        // BPB1 = button::BPB1;
-        // BPB2 = button::BPB2;
+        BPB0 = button::BPB0;
+        BPB1 = button::BPB1;
+        BPB2 = button::BPB2;
         LIS3DH = accelerometer;
         PEDOMETER = pedometer;
         PULSE = pulse;
@@ -279,11 +279,11 @@ const APP: () = {
         RX = rx;    
     }
 
-    #[idle(resources = [SLEEP], spawn = [trace, temp, pulse])]
+    #[idle(schedule = [pulse], spawn = [trace, temp, pulse])]
     fn idle() -> ! {
         spawn.trace();
         spawn.temp();
-        spawn.pulse();
+        schedule.pulse(Instant::now() + (12 * SECOND).cycles()).unwrap();
         loop {
              asm::wfi();        
         }
@@ -296,7 +296,7 @@ const APP: () = {
         let now = Instant::now();
         resources.LCD.update();
         let later = Instant::elapsed(&now);
-        // iprintln!(stim, "LCD update took: {} cycles", later.as_cycles());
+        iprintln!(stim, "LCD update took: {} cycles", later.as_cycles());
         schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
     }
 
@@ -316,10 +316,11 @@ const APP: () = {
     #[task(resources = [BUFFER, ITM, LCD, PULSE], schedule = [pulse])]
     fn pulse() { 
         let stim = &mut resources.ITM.stim[0];
+
         let mut pulse = resources.PULSE;
         let now = Instant::now();
-        pulse.update();
-
+       // pulse.update();
+        
         // iprintln!(stim, "pulse: {}", pulse.pulse);
         // iprintln!(stim, "counts: {}", pulse.counts);
         // iprintln!(stim, "max: {}", pulse.max);
@@ -345,7 +346,6 @@ const APP: () = {
             }
         }
     }
-
 
     #[task(resources = [ITM])]
     fn trace_data(byte: u8) {
@@ -420,9 +420,9 @@ const APP: () = {
     // }
 
     /// Interrupt for pins 5-9
-    // #[interrupt(resources = [ITM, BPB5,
-    #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC9, 
-                            EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
+    #[interrupt(resources = [
+    // #[interrupt(resources = [BPC7, BPC8, BPC9, 
+                            ITM, BPB5, EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
                 schedule = [clear_timeout])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
@@ -444,16 +444,17 @@ const APP: () = {
                 }
             }
             resources.BPB5.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC7.is_pressed() {
-            iprintln!(stim, "Pin 7 I'm high");
-            resources.BPC7.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC8.is_pressed(){
-            iprintln!(stim, "Pin 8 high");
-            resources.BPC8.clear_pending(&mut resources.EXTI);
-        } else if resources.BPC9.is_pressed() {
-            iprintln!(stim, "Pin 9 high");
-            resources.BPC9.clear_pending(&mut resources.EXTI);
-        }    
+        }
+        //  else if resources.BPC7.is_pressed() {
+        //     iprintln!(stim, "Pin 7 I'm high");
+        //     resources.BPC7.clear_pending(&mut resources.EXTI);
+        // } else if resources.BPC8.is_pressed(){
+        //     iprintln!(stim, "Pin 8 high");
+        //     resources.BPC8.clear_pending(&mut resources.EXTI);
+        // } else if resources.BPC9.is_pressed() {
+        //     iprintln!(stim, "Pin 9 high");
+        //     resources.BPC9.clear_pending(&mut resources.EXTI);
+        // }    
     }
     
     #[task(resources = [STEPTIMEOUT])]
