@@ -92,6 +92,8 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
+    /// Consumes aount 65k cycles, 
+    /// if updated with each max step speed 200ms, 325000 cykles per second
     pub fn update(&mut self) {
         // Latest values already displayed.
         if self.data.new_data == false {

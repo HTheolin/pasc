@@ -201,7 +201,7 @@ const APP: () = {
 
         // Instatiates a pedometer with starting threshold as 10G.
         // let pedometer = Pedometer::new(10.0, 1.2);
-        let pedometer = Step::new(0.5);
+        let pedometer = Step::new(0.3, 0.01);
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
         let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
@@ -279,38 +279,24 @@ const APP: () = {
         RX = rx;    
     }
 
-    #[idle(resources = [SLEEP], spawn = [print, trace, temp, pulse])]
+    #[idle(resources = [SLEEP], spawn = [trace, temp, pulse])]
     fn idle() -> ! {
-        
         spawn.trace();
         spawn.temp();
         spawn.pulse();
         loop {
-            // let now = Instant::now();
-            asm::wfi();
-            // let later = Instant::elapsed(&now);
-            // resources.SLEEP.lock(|sleep| {
-            //     *sleep = later.as_cycles();
-            // });
-            // spawn.print().unwrap();
-            
+             asm::wfi();        
         }
-    }
-
-    #[task(resources = [ITM, SLEEP])]
-    fn print() {
-        let stim = &mut resources.ITM.stim[0];
-        iprintln!(stim, "Sleeping for: {} cycles", resources.SLEEP);
     }
 
     /// Periodic task for your pleasure
     #[task(resources = [ITM, LCD], schedule = [trace])]
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
-         let now = Instant::now();
+        let now = Instant::now();
         resources.LCD.update();
-         let later = Instant::elapsed(&now);
-        iprintln!(stim, "LCD update took: {} cycles", later.as_cycles());
+        let later = Instant::elapsed(&now);
+        // iprintln!(stim, "LCD update took: {} cycles", later.as_cycles());
         schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
 
     }
@@ -323,7 +309,7 @@ const APP: () = {
         resources.LCD.temp_write(resources.TEMP.read());
 
         let later = Instant::elapsed(&now);
-        iprintln!(stim, "Temp took: {} cycles", later.as_cycles());
+        // iprintln!(stim, "Temp took: {} cycles", later.as_cycles());
         schedule.temp(scheduled + (1 * SECOND).cycles()).unwrap();
     }
 
@@ -341,7 +327,7 @@ const APP: () = {
         // iprintln!(stim, "min: {}", pulse.min);
         // iprintln!(stim, "ratio: {}", pulse.ratio);
         let later = Instant::elapsed(&now);
-        iprintln!(stim, "pulse took: {} cycles", later.as_cycles());
+        // iprintln!(stim, "pulse took: {} cycles", later.as_cycles());
         schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
     }
 
@@ -448,6 +434,10 @@ const APP: () = {
             let x_g = resources.LIS3DH.axis().x_g();
             let y_g = resources.LIS3DH.axis().y_g();
             let z_g = resources.LIS3DH.axis().z_g();
+            let now = Instant::now();
+            resources.PEDOMETER.add_sample(x_g, y_g, z_g);
+            let later = Instant::elapsed(&now);
+            iprintln!(stim, "Filter Calc took: {} cycles", later.as_cycles());
             //let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
             // iprintln!(stim, "Vector down: {}", vec_g);
             // resources.PEDOMETER.add_sample(vec_g);
@@ -465,12 +455,16 @@ const APP: () = {
 
             if *resources.STEPTIMEOUT {
                 let now = Instant::now();
-                let (vel, step) = resources.PEDOMETER.calc_step(x_g, y_g, z_g);
+                let (vel, step) = resources.PEDOMETER.detect_step();
+                let later = Instant::elapsed(&now);
+                // iprintln!(stim, "Calc took: {} cycles", later.as_cycles());
+                iprintln!(stim, "Threshold is: : {}", resources.PEDOMETER.get_threshold());
+                
                 if step {
                     iprintln!(stim, "Detected a step at velocity: {}", vel);
-                    let later = Instant::elapsed(&now);
+                    
                     // let later = (later.as_cycles() * 1_000) / CLOCK;
-                    iprintln!(stim, "Calc took: {} cycles", later.as_cycles());
+                    
                     
                     // resources.PEDOMETER.add_step();
                     resources.LCD.set_steps(resources.PEDOMETER.get_steps());

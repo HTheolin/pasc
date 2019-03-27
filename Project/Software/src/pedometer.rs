@@ -101,7 +101,7 @@ impl Pedometer {
             let v = Y_Offset * axis * SCALE;
             v_sum += v;
         }
-        
+
         let k: usize = 0;
         let v = v_sum / 3.0;
 
