@@ -34,6 +34,7 @@ use hal::prelude::_embedded_hal_timer_CountDown as CountDown;
 // use hal::prelude::_embedded_hal_blocking_i2c_WriteRead as WriteRead;
 
 use rtfm::{app, Instant};
+use ryu;
 
 mod adc;
 mod button;
@@ -209,9 +210,6 @@ const APP: () = {
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
 
-        //USART init //
-        let stim = &mut core.ITM.stim[0];
-        iprintln!(stim, "usart-PASC");
 
         let tx = gpioa.pa9.into_alternate_af7();
         let rx = gpioa.pa10.into_alternate_af7();
@@ -357,24 +355,84 @@ const APP: () = {
     #[task(resources = [TX], spawn = [trace_error])]
     fn echo(byte: u8) {
         let tx = resources.TX;
-
         if block!(tx.write(byte)).is_err() {
             let _ = spawn.trace_error(Error::UsartSendOverflow);
         }
 
     }
 
-    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo])]
+    #[task(resources = [LIS3DH], spawn = [trace_error, echo])]
+    fn accecho() {
+        let mut lis3dh = resources.LIS3DH;
+
+        let mut xbuffer = ryu::Buffer::new();
+        let xstring = xbuffer.format(lis3dh.axis().x_g());        
+        let mut ybuffer = ryu::Buffer::new(); 
+        let ystring = ybuffer.format(lis3dh.axis().y_g()); 
+        let mut zbuffer = ryu::Buffer::new(); 
+        let zstring = zbuffer.format(lis3dh.axis().z_g()); 
+
+        let xb = xstring.as_bytes();
+        let yb = ystring.as_bytes();
+        let zb = zstring.as_bytes();
+
+        let mut j = 0;
+        let mut rxout = [0;18];
+        rxout[j] = 0b01111000;
+        j += 1;
+        for i in 0..5{
+            rxout [j]= xb[i];
+            j += 1;
+        }
+        rxout [j]= 0b01111001;
+        j += 1;
+        for i in 0..5{
+        rxout [j]= yb[i];
+        j += 1;
+        }
+        rxout [j]= 0b01111010;
+        j += 1;
+        for i in 0..5{
+            rxout [j] = zb[i];
+            j += 1;
+        }
+
+        for i in 0..18{
+            let _ = spawn.echo(rxout[i]);
+        }
+
+    }
+
+    #[task(resources = [PULSE], spawn = [trace_error, echo])]
+    fn pulseecho(){
+        let pulse = resources.PULSE;
+        let mut pulsebuffer = ryu::Buffer::new();
+        let pulsestring = pulsebuffer.format(pulse.pulse);
+
+        let pulse = pulsestring.as_bytes();
+
+        let _ = spawn.echo(pulse[0]);
+    }    
+
+    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo, pulseecho, accecho])]
     fn USART1() {
         let rx = resources.RX;
 
         match rx.read() {
             Ok(byte) => {
-                let _ = spawn.echo(byte);
+                //if byte == 1 {
+                    let _ = spawn.echo(byte);
+                //}
+                //if byte == 2 { 
+                //    let _ = spawn.pulseecho();
+                //}
+                //if byte == 3 {
+                //    let _ = spawn.accecho();
+                //}
                 if spawn.trace_data(byte).is_err() {
                     let _ = spawn.trace_error(Error::RingBufferOverflow);
                 }
-            }
+            }        
             Err(_err) => {
                 let _ = spawn.trace_error(Error::UsartReceiveOverflow);
             }
@@ -486,6 +544,7 @@ const APP: () = {
     // }
 
     extern "C" {
+        fn EXTI3();
         fn EXTI4();
     }
 };
