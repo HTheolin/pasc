@@ -123,6 +123,7 @@ impl Lcd {
             
         } else {
             self.device.draw_buffer_horizontal(&mut self.spi, &RIP);
+            self.is_drawn = false;
             self.data.new_data = false;
             return;
         }
