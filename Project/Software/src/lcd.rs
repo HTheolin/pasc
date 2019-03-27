@@ -62,7 +62,7 @@ macro_rules! implement_lcd {
                     spi1,
                     (sck, miso, mosi),
                     spi_mode,
-                    1000000.hz(),
+                    4000000.hz(),
                     clocks,
                 );
 
@@ -92,12 +92,14 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
+    /// Consumes aount 65k cycles, 
+    /// if updated with each max step speed 200ms, 325000 cykles per second
     pub fn update(&mut self) {
         // Latest values already displayed.
         if self.data.new_data == false {
             return;
         }
-
+        
         self.device.clear(&mut self.spi);
 
         // Temperature.
@@ -124,6 +126,17 @@ impl Lcd {
         self.device.print_bytes(&mut self.spi, countdown_suffix);
         self.device.print_bytes(&mut self.spi, countdown);
                 
+        // Pulse
+        let mut buffer = ryu::Buffer::new();
+        let pulse = buffer.format(self.data.pulse);
+        let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
+        self.device.set_position(&mut self.spi, 0u8, 3u8);
+        self.device.print(&mut self.spi, pulse);
+        self.device.print_bytes(&mut self.spi, pulse_suffix);
+
+
+
+
         self.data.new_data = false;
     }
 
@@ -153,10 +166,16 @@ impl Lcd {
 
     pub fn set_steps(&mut self, steps: u32) {
         self.data.step = steps;
+        self.data.new_data = true;
     }
 
     // Pulses per minute.
-    // TODO ...
+    pub fn set_pulse(&mut self, pulse: f32) {
+        if (pulse != self.data.pulse) {
+            self.data.pulse = pulse;    
+            self.data.new_data = true;
+        }
+    }
 
 
     // Countdown time per second.
@@ -183,7 +202,7 @@ pub struct LcdData {
     // Data.
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
-    pulse: u32, // Pulse, beats per minute.
+    pulse: f32, // Pulse, beats per minute.
     countdown: u32, //Time countdown per second.
 }
 
@@ -193,13 +212,13 @@ impl LcdData{
             new_data: true,
             temp: 0f32,
             step: 0u32,
-            pulse: 0u32,
+            pulse: 0f32,
             countdown: 0u32,
         }
     }
 }
 
 // HPCB
-implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);

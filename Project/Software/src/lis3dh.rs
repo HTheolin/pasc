@@ -432,9 +432,6 @@ pub fn read_ack(i2c: &I2C1, buffer: &mut [u8]) -> Result<(), nb::Error<I2CError>
     
     // Wait for end of address transmission
     while i2c.sr1.read().addr().bit_is_clear() {
-        // if i2c.sr1.read().af().bit_is_set() {
-        //     return Err(nb::Error::Other(I2CError::Timeout));
-        // }
         let _sr2 = i2c.sr2.read().bits();
     }
 
@@ -487,10 +484,7 @@ pub fn stop(i2c: &I2C1) -> Result<(), nb::Error<I2CError>> {
     i2c.cr1.modify(|_,w|  w.ack().clear_bit());
 
     let _sr2 = i2c.sr2.read();
-    
-    // if i2c.sr1.read().tx_e().bit_is_clear() && i2c.sr1.read().btf().bit_is_clear() {
-    //     return Err(nb::Error::WouldBlock);
-    // }
+
     // Send STOP condition
     i2c.cr1.modify(|_, w| w.stop().set_bit());
     Ok(())
