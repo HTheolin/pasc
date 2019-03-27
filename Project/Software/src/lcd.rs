@@ -30,7 +30,7 @@ use crate::pcd8544::{Pcd8544Spi, Pcd8544};
 use crate::heart::HEART;
 use crate::rip::RIP;
 
-const SENSOR_RATIO: f32 = 2;
+const SENSOR_RATIO: f32 = 2.0;
 
 // Change macro call at bottom of this file to change board.
 //      Simon PCB (SPCB): DC is PC2, SCE is PC0.
@@ -100,7 +100,7 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
-    /// Consumes aount 85k cycles, 
+    /// Consumes about 85k cycles, 
     /// if updated with each max step speed 200ms,  cycles per second
     pub fn update(&mut self) {
         // Latest values already displayed.
