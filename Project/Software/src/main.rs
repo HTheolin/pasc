@@ -64,7 +64,7 @@ const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
-const ADCFREQUENCY: time::Hertz = time::Hertz(32);
+const ADCFREQUENCY: time::Hertz = time::Hertz(64);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
 
@@ -211,7 +211,7 @@ const APP: () = {
 
         //USART init //
         let stim = &mut core.ITM.stim[0];
-        iprintln!(stim, "usart-PASC");
+        // iprintln!(stim, "usart-PASC");
 
         let tx = gpioa.pa9.into_alternate_af7();
         let rx = gpioa.pa10.into_alternate_af7();
@@ -280,11 +280,11 @@ const APP: () = {
         RX = rx;    
     }
 
-    #[idle(spawn = [trace, temp, pulse])]
+    #[idle(schedule = [pulse], spawn = [trace, temp, pulse])]
     fn idle() -> ! {
         spawn.trace();
         spawn.temp();
-        spawn.pulse();
+        schedule.pulse(Instant::now() + (12 * SECOND).cycles()).unwrap();
         loop {
             asm::wfi();
         }
@@ -310,18 +310,17 @@ const APP: () = {
     #[task(resources = [BUFFER, ITM, LCD, PULSE], schedule = [pulse])]
     fn pulse() { 
         let stim = &mut resources.ITM.stim[0];
-        
-        resources.PULSE.lock(|pulse| {
-            pulse.update();
-        });
 
-        let pulse = resources.PULSE;
-        iprintln!(stim, "pulse: {}", pulse.pulse);
-        iprintln!(stim, "counts: {}", pulse.counts);
-        iprintln!(stim, "max: {}", pulse.max);
-        iprintln!(stim, "min: {}", pulse.min);
-        iprintln!(stim, "ratio: {}", pulse.ratio);
+        let mut pulse = resources.PULSE;
+        pulse.update();
         
+        // iprintln!(stim, "pulse: {}", pulse.pulse);
+        // iprintln!(stim, "counts: {}", pulse.counts);
+        // iprintln!(stim, "max: {}", pulse.max);
+        // iprintln!(stim, "min: {}", pulse.min);
+        // iprintln!(stim, "ratio: {}", pulse.ratio);
+        resources.LCD.set_pulse(pulse.read());
+
         schedule.pulse(scheduled + (6 * SECOND).cycles()).unwrap();
     }
 

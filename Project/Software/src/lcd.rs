@@ -116,6 +116,17 @@ impl Lcd {
         self.device.print_bytes(&mut self.spi, steps);
         self.device.print_bytes(&mut self.spi, step_suffix);
                 
+        // Pulse
+        let mut buffer = ryu::Buffer::new();
+        let pulse = buffer.format(self.data.pulse);
+        let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
+        self.device.set_position(&mut self.spi, 0u8, 4u8);
+        self.device.print(&mut self.spi, pulse);
+        self.device.print_bytes(&mut self.spi, pulse_suffix);
+
+
+
+
         self.data.new_data = false;
     }
 
@@ -148,7 +159,12 @@ impl Lcd {
     }
 
     // Pulses per minute.
-    // TODO ...
+    pub fn set_pulse(&mut self, pulse: f32) {
+        if (pulse != self.data.pulse) {
+            self.data.pulse = pulse;    
+            self.data.new_data = true;
+        }
+    }
 
     pub fn write_line(&mut self, row: u8, line: &str) {
         self.device.set_position(&mut self.spi, 0u8, row);
@@ -163,7 +179,7 @@ pub struct LcdData {
     // Data.
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
-    pulse: u32, // Pulse, beats per minute.
+    pulse: f32, // Pulse, beats per minute.
 }
 
 impl LcdData{
@@ -172,7 +188,7 @@ impl LcdData{
             new_data: true,
             temp: 0f32,
             step: 0u32,
-            pulse: 0u32,
+            pulse: 0.0f32,
         }
     }
 }
