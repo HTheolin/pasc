@@ -53,12 +53,14 @@ mod time;
 mod pedometer;
 mod filter;
 mod step;
+mod countdowntimer;
 
 use channel::Channel;
 use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
 use pedometer::Pedometer;
 use step::Step;
+use countdowntimer::CountdownTimer;
 use pulsemeter::Pulse;
 use temperature::Temperature;
 
@@ -102,10 +104,12 @@ const APP: () = {
     static mut BPB0: button::PB0  = ();
     static mut BPB1: button::PB1  = ();
     static mut BPB2: button::PB2  = ();
-    static mut LCD: lcd::Lcd = ();
-    static mut LIS3DH: Accelerometer = (); 
+
     // static mut PEDOMETER: Pedometer = ();
     static mut PEDOMETER: Step = ();
+    static mut LCD: lcd::Lcd = ();
+    static mut LIS3DH: Accelerometer = (); 
+    static mut COUNTDOWNTIMER: CountdownTimer = ();
     static mut PULSE: Pulse = ();
     static mut TEMP: Temperature = ();
 
@@ -182,12 +186,12 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
-        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
         // Initiates the i2c bus at 100khz
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
@@ -254,6 +258,9 @@ const APP: () = {
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
+
+        let countdowntimer = CountdownTimer::newTimer();
+
         
         BPB5 = button::BPB5;
         // Toggle commeting on these to change board
@@ -273,6 +280,7 @@ const APP: () = {
         DMA2 = dma2;
         EXTI = exti;
         BPC13 = button::BPC13;
+        COUNTDOWNTIMER = countdowntimer;
 
         // Our split serial
         TX = tx;
@@ -389,43 +397,55 @@ const APP: () = {
         }
     }    
 
-    // /// Interupt for buttons bound to pins px0
-    // #[interrupt(resources = [ITM, EXTI, BPB0, LCD])]
-    // fn EXTI0() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     let lcd = &mut resources.LCD;
-    //     iprintln!(stim, "Button was clicked!");
-    //     lcd.step_add();
-    //     resources.BPB0.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px0
+    #[interrupt(resources = [ITM, EXTI, BPB0, LCD, COUNTDOWNTIMER], 
+                schedule = [reset_request], 
+                spawn = [start_timer])]
+    fn EXTI0() {
+        let mut n: u32 = 1;
+        if !(resources.COUNTDOWNTIMER.get_isStarted()){
+            resources.COUNTDOWNTIMER.set_isStarted(true);
+            if n == 1{
+                spawn.start_timer().unwrap();
+                n += 1;
+            }
+        }
+        else if resources.COUNTDOWNTIMER.get_isStarted(){
+            resources.COUNTDOWNTIMER.pause_timer();
+            schedule.reset_request(Instant::now() + (5*SECOND).cycles()).unwrap();
+        }
+        //     iprintln!(stim, "Pin 7 I'm high");
+        resources.BPB0.clear_pending(&mut resources.EXTI)
+    }
 
-    // /// Interupt for buttons bound to pins px1
-    // #[interrupt(resources = [ITM, EXTI, BPB1, LCD])]
-    // fn EXTI1() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     let lcd = &mut resources.LCD;
-    //     iprintln!(stim, "Button was clicked!");
-    //     lcd.step_reset();
-    //     resources.BPB1.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px1
+    #[interrupt(resources = [ITM, EXTI, BPB1, LCD, COUNTDOWNTIMER])]
+    fn EXTI1() {
+        if !(resources.COUNTDOWNTIMER.get_isStarted()){
+            resources.COUNTDOWNTIMER.set_timer();
+        }
+        resources.BPB1.clear_pending(&mut resources.EXTI)
+    }
 
-    // /// Interupt for buttons bound to pins px2
-    // #[interrupt(resources = [ITM, EXTI, BPB2, LCD])]
-    // fn EXTI2() {
-    //     let stim = &mut resources.ITM.stim[0];
-    //     let lcd = &mut resources.LCD;
-    //     iprintln!(stim, "Button was clicked!");
-    //     lcd.write_line(2, "Button 3!");
-    //     resources.BPB2.clear_pending(&mut resources.EXTI)
-    // }
+    /// Interupt for buttons bound to pins px2
+    #[interrupt(resources = [ITM, EXTI, BPB2, LCD])]
+    fn EXTI2() {
+        let stim = &mut resources.ITM.stim[0];
+        let lcd = &mut resources.LCD;
+        iprintln!(stim, "Button was clicked!");
+        lcd.write_line(2, "Button 3!");
+        resources.BPB2.clear_pending(&mut resources.EXTI)
+    }
 
     /// Interrupt for pins 5-9
     #[interrupt(resources = [
     // #[interrupt(resources = [BPC7, BPC8, BPC9, 
-                            ITM, BPB5, EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER], 
-                schedule = [clear_timeout])]
+                            ITM, BPB5, EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER, COUNTDOWNTIMER], 
+                schedule = [clear_timeout, reset_request],
+                spawn = [start_timer])]
     fn EXTI9_5() {
         let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "Button click");
         if resources.BPB5.is_pressed() {
 
             let mut data = [0; 6];
@@ -445,32 +465,82 @@ const APP: () = {
             }
             resources.BPB5.clear_pending(&mut resources.EXTI);
         }
-        //  else if resources.BPC7.is_pressed() {
-        //     iprintln!(stim, "Pin 7 I'm high");
+        // else if resources.BPC7.is_pressed() {
+        //     let mut n: u32 = 1;
+        //     if !(resources.COUNTDOWNTIMER.get_isStarted()){
+        //         resources.COUNTDOWNTIMER.set_isStarted(true);
+        //         if n == 1{
+        //             spawn.start_timer().unwrap();
+        //             n += 1;
+        //         }
+        //     }
+        //     else if resources.COUNTDOWNTIMER.get_isStarted(){
+        //         resources.COUNTDOWNTIMER.pause_timer();
+        //         schedule.reset_request(Instant::now() + (5*SECOND).cycles()).unwrap();
+        //     }
         //     resources.BPC7.clear_pending(&mut resources.EXTI);
-        // } else if resources.BPC8.is_pressed(){
-        //     iprintln!(stim, "Pin 8 high");
+        // //     iprintln!(stim, "Pin 7 I'm high");
+        // } 
+        // else if resources.BPC8.is_pressed(){
+        //     if !(resources.COUNTDOWNTIMER.get_isStarted()){
+        //         resources.COUNTDOWNTIMER.set_timer();
+        //     }
         //     resources.BPC8.clear_pending(&mut resources.EXTI);
-        // } else if resources.BPC9.is_pressed() {
+        // //     iprintln!(stim, "Pin 8 high");
+        // } 
+        // else if resources.BPC9.is_pressed() {            
         //     iprintln!(stim, "Pin 9 high");
         //     resources.BPC9.clear_pending(&mut resources.EXTI);
-        // }    
+        // }
     }
     
     #[task(resources = [STEPTIMEOUT])]
     fn clear_timeout() {
         *resources.STEPTIMEOUT = true;
     }
-    // /// Interrupt for PC13 user btn on the nucleo board.
-    // #[interrupt(resources = [ITM, EXTI, BPC13])]
-    // fn EXTI15_10() {
-    //     resources.ITM.lock(|itm| {
-    //         let stim = &mut itm.stim[0];
-    //         iprintln!(stim, "Button was clicked!");
-    //     });
-        
-    //     resources.BPC13.clear_pending(&mut resources.EXTI);
-    // }
+    
+    /// Interrupt for PC13 user btn on the nucleo board.
+    #[interrupt(resources = [ITM, EXTI, BPC13, COUNTDOWNTIMER])]
+    fn EXTI15_10() {
+        let stim = &mut resources.ITM.stim[0];
+         if resources.BPC13.is_pressed(){
+            iprintln!(stim, "Pin 13 high");
+
+            if !(resources.COUNTDOWNTIMER.get_isStarted()){
+                resources.COUNTDOWNTIMER.set_timer();
+                iprintln!(stim, "Added 1 to timer!");
+            }
+            resources.BPC13.clear_pending(&mut resources.EXTI);
+        }
+    }
+    
+    #[task(resources = [ITM, LCD, COUNTDOWNTIMER], schedule = [start_timer])]
+    fn start_timer(){
+        resources.LCD.set_countdown(resources.COUNTDOWNTIMER.get_startT());
+
+        if resources.COUNTDOWNTIMER.get_startT() > 0{
+            schedule.start_timer(Instant::now() + (SECOND).cycles()).unwrap();
+            resources.COUNTDOWNTIMER.set_startT(1 as u32);
+        }
+        else{
+            /*Possibly add function call to speaker*/
+            resources.COUNTDOWNTIMER.set_isStarted(false);
+        }  
+    }
+
+    // #[task(resources = [BPC7, COUNTDOWNTIMER])]
+    #[task(resources = [BPB0, COUNTDOWNTIMER])]
+    fn reset_request(){
+        /*Henriks bräda*/
+        // if resources.BPC7.is_pressed(){
+        //     resources.COUNTDOWNTIMER.reset_timer();
+        // }
+
+        /*Simons bräda*/
+        if resources.BPB0.is_pressed(){
+            resources.COUNTDOWNTIMER.reset_timer();
+        }
+    }
 
     extern "C" {
         fn EXTI4();
