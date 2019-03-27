@@ -20,12 +20,13 @@ extern crate nb;
 
 use embedded_hal::blocking::i2c::{WriteRead};
 use crate::hal::prelude::*;
+use crate::hal::serial::{config::Config, Event, Rx, Serial, Tx};
 
 use hal::stm32::{ITM, DMA2, EXTI, I2C1, SPI1};
-use hal::gpio::gpioa::{PA5, PA7};
+use hal::gpio::gpioa::{PA5, PA7, PA8, PA9, PA10};
 use hal::gpio::gpioc::{PC0, PC2, PC3, PC6, PC7, PC8, PC9};
-use hal::gpio::gpiob::{PB0, PB1, PB2};
-use hal::gpio::{Output, PushPull, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
+use hal::gpio::gpiob::{PB0, PB1, PB2, PB5};
+use hal::gpio::{Output, PushPull, Floating, Speed, Input, PullDown, ExtiPin, Edge, Alternate, AF5};
 use hal::time::{Hertz, KiloHertz, MilliSeconds};
 use hal::i2c::{I2c, PinScl, PinSda};
 use hal::timer::Timer;
@@ -45,8 +46,9 @@ mod lcd;
 mod lis3dh;
 mod pcd8544;
 mod pcd8544_spi;
+mod pulsemeter;
 mod pwm;
-mod temp;
+mod temperature;
 mod time;
 mod pedometer;
 mod countdowntimer;
@@ -56,18 +58,22 @@ use dma::{CircBuffer, Dma2Stream0};
 use lis3dh::Accelerometer;
 use pedometer::Pedometer;
 use countdowntimer::CountdownTimer;
+use pulsemeter::Pulse;
+use temperature::Temperature;
 
 const CLOCK: u32 = 64_000_000;
+const CLOCKMHZ: u32 = CLOCK / 1_000_000;
 //use button::{BUTTON, PB0};
 const FREQUENCY: time::Hertz = time::Hertz(100);
 const LCDFREQUENCY: time::Hertz = time::Hertz(1000);
-const ADCFREQUENCY: time::Hertz = time::Hertz(8);
+const ADCFREQUENCY: time::Hertz = time::Hertz(16);
 const I2CFREQUENCY: KiloHertz = KiloHertz(1);
 const SPIFREQUENCY: Hertz = Hertz(100);
 
 const SECOND: u32 = CLOCK ;
 const MILLISECOND: u32 = CLOCK / 1000;
 const N: usize = 2;
+const SAMPLESIZE: usize = 50;
 // Our error type
 #[derive(Debug)]
 pub enum Error {
@@ -84,6 +90,9 @@ const APP: () = {
     static mut BPC13: button::PC13 = ();
 
     static mut BPB5: button::PB5 = ();
+    
+    static mut TX: Tx<hal::stm32::USART1> = ();
+    static mut RX: Rx<hal::stm32::USART1> = ();
 
     // Toggle these to change board
     static mut BPC7: button::PC7  = ();
@@ -93,10 +102,12 @@ const APP: () = {
     // static mut BPB1: button::PB1  = ();
     // static mut BPB2: button::PB2  = ();
     
+    static mut LCD: lcd::Lcd = ();
     static mut LIS3DH: Accelerometer = (); 
     static mut PEDOMETER: Pedometer = ();
-    static mut LCD: lcd::Lcd = ();
     static mut COUNTDOWNTIMER: CountdownTimer = ();
+    static mut PULSE: Pulse = ();
+    static mut TEMP: Temperature = ();
 
     static mut BUFFER: CircBuffer<'static, [u16; N], Dma2Stream0> = CircBuffer::new([[0; N]; 2]);
     static mut STEPTIMEOUT: bool = true;
@@ -109,6 +120,7 @@ const APP: () = {
         let tim2 = device.TIM2;
         let tim3 = device.TIM3;
         let tim5 = device.TIM5;
+        let tim9 = device.TIM9;
         let spi1 = device.SPI1;
         let exti = device.EXTI;
         let syscfg = device.SYSCFG;
@@ -170,41 +182,68 @@ const APP: () = {
         button::BPB5.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
         
         // Toggle commeting on these to change board
-        // button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        // button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
-        button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        button::BPC7.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC8.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        button::BPC9.init(&device.GPIOC, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPB0.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::RISING, false);
+        // button::BPB1.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
+        // button::BPB2.init(&device.GPIOB, &rcc, &syscfg, &exti, Edge::FALLING, false);
 
-        let stim = &mut core.ITM.stim[0];
         // Initiates the i2c bus at 100khz
-
         lis3dh::init(&i2c1, &device.GPIOB, &rcc);
-        let mut accelerometer = lis3dh::Accelerometer::new(i2c1, lis3dh::Range::LIS3DH_RANGE_2_G);
+        // Initiates the accelerometer, set range to 2G for high sensitivity, 
+        // datarate 50 Hz, no need to go faster and enable click interrupts as 20 ms intervall with low threshold
+        let mut accelerometer = lis3dh::Accelerometer::new(i2c1);
+        accelerometer.setup();
+        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_50_HZ);
+        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
+        accelerometer.set_click_interrupt(1, 2, 20, 0, 20);
+
+        // Instatiates a pedometer with starting threshold as 10G.
+        let pedometer = Pedometer::new(10.0, 1.2);
+        
         // Get clock for timer to enable a delay in the lcd startup sequence
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(64.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(CLOCKMHZ.mhz()).pclk1(16.mhz()).pclk2(16.mhz()).freeze();
         
         let mut timer = Timer::tim5(tim5, SPIFREQUENCY, clocks);
-
 
         let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
 
+        //USART init //
+        let stim = &mut core.ITM.stim[0];
+        iprintln!(stim, "usart-PASC");
+
+        let tx = gpioa.pa9.into_alternate_af7();
+        let rx = gpioa.pa10.into_alternate_af7();
+
+        let mut serial = Serial::usart1(
+            device.USART1,
+            (tx, rx),
+            Config::default().baudrate(115_200.bps()),
+            clocks,
+        )
+        .unwrap(); 
+
+        // generate interrupt on Rxne
+        serial.listen(Event::Rxne);
+        // Separate out the sender and receiver of the serial port
+        let (tx, rx) = serial.split();    
+
         // LCD.
         // To change between boards, comment/uncomment these lines.
         // Also change the macro call in lcd.rs!
 
-        // // Simon PCB LCD.
+        // Simon PCB LCD.
         // let sce  = gpioc.pc0.into_push_pull_output().into();
         // let rst  = gpioc.pc1.into_push_pull_output().into();
         // let dc   = gpioc.pc2.into_push_pull_output().into();
         // let mosi = gpioa.pa7.into_alternate_af5();
         // let sck  = gpioa.pa5.into_alternate_af5();
 
-        // Henrik PCB LCD.
+        // // Henrik PCB LCD.
         let sce  = gpioc.pc5.into_push_pull_output().into();
         let rst  = gpioc.pc4.into_push_pull_output().into();
         let dc   = gpiob.pb0.into_push_pull_output().into();
@@ -213,16 +252,9 @@ const APP: () = {
 
         let lcd = lcd::Lcd::init(&mut timer, sce, rst, dc, mosi, sck, clocks, spi1);
        
-        let mut buffer = [0; 1];
-        accelerometer.who_am_i(&mut buffer).unwrap();
-        iprintln!(stim, "I AM {} ", buffer[0]);
-        accelerometer.setup();
-        accelerometer.set_datarate(lis3dh::Datarate::LIS3DH_DATARATE_400_HZ);
-        accelerometer.set_range(lis3dh::Range::LIS3DH_RANGE_2_G);
-        iprintln!(stim, "Wrote registers");
-        accelerometer.set_click_interrupt(1, 70, 200, 0, 150);
-      
-        let pedometer = Pedometer::new(0.4);
+        let pulse = Pulse::new(ADCFREQUENCY);
+
+        let temp = Temperature::new();
         //Enable adc after splash screen!
         adc.enable();
         adc.start(resources.BUFFER, &dma2, &mut pwm2).unwrap();
@@ -241,6 +273,8 @@ const APP: () = {
         // BPB2 = button::BPB2;
         LIS3DH = accelerometer;
         PEDOMETER = pedometer;
+        PULSE = pulse;
+        TEMP = temp;
         LCD = lcd;
         ITM = core.ITM;
         DMA2 = dma2;
@@ -248,12 +282,16 @@ const APP: () = {
         BPC13 = button::BPC13;
         COUNTDOWNTIMER = countdowntimer;
 
-
+        // Our split serial
+        TX = tx;
+        RX = rx;    
     }
 
-    #[idle(spawn = [trace])]
+    #[idle(spawn = [trace, temp, pulse])]
     fn idle() -> ! {
         spawn.trace();
+        spawn.temp();
+        spawn.pulse();
         loop {
             asm::wfi();
         }
@@ -264,11 +302,35 @@ const APP: () = {
     fn trace() {
         let stim = &mut resources.ITM.stim[0];
         resources.LCD.update();
-        schedule.trace(Instant::now() + (4*SECOND).cycles()).unwrap();
+        schedule.trace(Instant::now() + (pedometer::STEPWINDOW*MILLISECOND).cycles()).unwrap();
+
+    }
+
+    /// Temperature doesn't need to be calculated often. It is quite expensive.
+    #[task(resources = [BUFFER, ITM, LCD, TEMP], schedule = [temp])]
+    fn temp() { 
+        resources.LCD.temp_write(resources.TEMP.read());
+        schedule.temp(scheduled + (1 * SECOND).cycles()).unwrap();
+    }
+
+    /// Pulse.
+    #[task(resources = [BUFFER, ITM, LCD, PULSE], schedule = [pulse])]
+    fn pulse() { 
+        let stim = &mut resources.ITM.stim[0];
+        let mut pulse = resources.PULSE;
+        pulse.update();
+
+        iprintln!(stim, "pulse: {}", pulse.pulse);
+        iprintln!(stim, "counts: {}", pulse.counts);
+        iprintln!(stim, "max: {}", pulse.max);
+        iprintln!(stim, "min: {}", pulse.min);
+        iprintln!(stim, "ratio: {}", pulse.ratio);
+        
+        schedule.pulse(scheduled + (2 * SECOND).cycles()).unwrap();
     }
 
     // Direct Memory Access buffer filled by ADC interrupts.
-    #[interrupt(resources = [BUFFER, DMA2, LCD, ITM])]
+    #[interrupt(resources = [BUFFER, DMA2, LCD, ITM, TEMP, PULSE])]
     fn DMA2_STREAM0() {
         let stim = &mut resources.ITM.stim[0];
         match resources.BUFFER.read(resources.DMA2, |x| {
@@ -277,35 +339,99 @@ const APP: () = {
         }) {
             Err(_) => cortex_m::asm::bkpt(),
             Ok(b) => {
-                iprintln!(stim, "{:?}", b[0]);
-                let temp = temp::to_celsius(b[0]);
-                iprintln!(stim, "{:?}", temp);
-                resources.LCD.temp_write(temp as f32);
+                resources.TEMP.write_sample(b[0]);
+                resources.PULSE.write_sample(b[1]);
             }
         }
     }
 
-    // /// Interupt for buttons bound to pins px0
-    // #[interrupt(resources = [ITM, EXTI, BPB0, LCD])]
+
+    #[task(resources = [ITM])]
+    fn trace_data(byte: u8) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "data {}", byte);
+        // for _ in 0..10000 {
+        //     asm::nop();
+        // }
+    }
+
+    #[task(resources = [ITM])]
+    fn trace_error(error: Error) {
+        let stim = &mut resources.ITM.stim[0];
+        iprintln!(stim, "{:?}", error);
+    }
+
+    #[task(resources = [TX], spawn = [trace_error])]
+    fn echo(byte: u8) {
+        let tx = resources.TX;
+
+        if block!(tx.write(byte)).is_err() {
+            let _ = spawn.trace_error(Error::UsartSendOverflow);
+        }
+
+    }
+
+    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo])]
+    fn USART1() {
+        let rx = resources.RX;
+
+        match rx.read() {
+            Ok(byte) => {
+                let _ = spawn.echo(byte);
+                if spawn.trace_data(byte).is_err() {
+                    let _ = spawn.trace_error(Error::RingBufferOverflow);
+                }
+            }
+            Err(_err) => {
+                let _ = spawn.trace_error(Error::UsartReceiveOverflow);
+            }
+        }
+    }    
+
+    /// Interupt for buttons bound to pins px0
+    // #[interrupt(resources = [ITM, EXTI, BPB0, LCD, COUNTDOWNTIMER], 
+    //             schedule = [reset_request], 
+    //             spawn = [start_timer])]
     // fn EXTI0() {
     //     let stim = &mut resources.ITM.stim[0];
     //     let lcd = &mut resources.LCD;
     //     iprintln!(stim, "Button was clicked!");
     //     lcd.step_add();
+        
+        /* Simons board, countdown timer code*/
+    //     let mut n: u32 = 1;
+    //         if !(resources.COUNTDOWNTIMER.get_isStarted()){
+    //             resources.COUNTDOWNTIMER.set_isStarted(true);
+    //             if n == 1{
+    //                 spawn.start_timer().unwrap();
+    //                 n += 1;
+    //             }
+    //         }
+    //         else if resources.COUNTDOWNTIMER.get_isStarted(){
+    //             resources.COUNTDOWNTIMER.pause_timer();
+    //             schedule.reset_request(Instant::now() + (5*SECOND).cycles()).unwrap();
+    //         }
     //     resources.BPB0.clear_pending(&mut resources.EXTI)
+
     // }
 
-    // /// Interupt for buttons bound to pins px1
-    // #[interrupt(resources = [ITM, EXTI, BPB1, LCD])]
+    /// Interupt for buttons bound to pins px1
+    // #[interrupt(resources = [ITM, EXTI, BPB1, LCD, COUNTDOWNTIMER])]
     // fn EXTI1() {
     //     let stim = &mut resources.ITM.stim[0];
     //     let lcd = &mut resources.LCD;
     //     iprintln!(stim, "Button was clicked!");
     //     lcd.step_reset();
+
+        /* Simons board, countdown timer code*/
+    //     if !(resources.COUNTDOWNTIMER.get_isStarted()){
+    //         resources.COUNTDOWNTIMER.set_timer();
+    //     }
     //     resources.BPB1.clear_pending(&mut resources.EXTI)
+
     // }
 
-    // /// Interupt for buttons bound to pins px2
+    /// Interupt for buttons bound to pins px2
     // #[interrupt(resources = [ITM, EXTI, BPB2, LCD])]
     // fn EXTI2() {
     //     let stim = &mut resources.ITM.stim[0];
@@ -316,41 +442,89 @@ const APP: () = {
     // }
 
     /// Interrupt for pins 5-9
-    // #[interrupt(resources = [ITM, EXTI, I2C1, BPB5, BPC7, BPC8, BPC9, LCD, SPI])]
-    #[interrupt(resources = [ITM, EXTI, LIS3DH, BPB5, LCD, STEPTIMEOUT, PEDOMETER], schedule = [clear_timeout])]
+    #[interrupt(resources = [ITM, BPB5, BPC7, BPC8, BPC13, /*BPC9,*/ 
+                            EXTI, LIS3DH, LCD, STEPTIMEOUT, PEDOMETER, COUNTDOWNTIMER], 
+                schedule = [clear_timeout, reset_request], 
+                spawn = [start_timer])]
     fn EXTI9_5() {
-
         let stim = &mut resources.ITM.stim[0];
-        resources.LIS3DH.increment_sample();
-
-        if *resources.STEPTIMEOUT {
-            *resources.STEPTIMEOUT = false;
+        iprintln!(stim, "Button click");
+        if resources.BPB5.is_pressed() {
             let mut data = [0; 6];
             resources.LIS3DH.read_accelerometer(&mut data).unwrap();
-            
-            iprintln!(stim, "Accelerometer values: x: {}, y: {}, z: {}", resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-            let direction = resources.PEDOMETER.get_direction();
-            let step = match direction {
-                pedometer::Direction::X => resources.LIS3DH.axis().x_g(),
-                pedometer::Direction::Y => resources.LIS3DH.axis().y_g(),
-                pedometer::Direction::Z => resources.LIS3DH.axis().z_g(),
-            };
-
-            if resources.PEDOMETER.is_step(step) {
-                resources.PEDOMETER.add_step();
-                resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+            let x_g = resources.LIS3DH.axis().x_g();
+            let y_g = resources.LIS3DH.axis().y_g();
+            let z_g = resources.LIS3DH.axis().z_g();
+            let vec_g = resources.PEDOMETER.vector_down(x_g, y_g, z_g);
+            iprintln!(stim, "Vector down: {}", vec_g);
+            resources.PEDOMETER.add_sample(vec_g);
+            if resources.PEDOMETER.get_samples() >= pedometer::SAMPLELIMIT {
+                resources.PEDOMETER.calc_max();
+                resources.PEDOMETER.calc_min();                             
+                resources.PEDOMETER.calc_threshold();
+                iprintln!(stim, "Max value: {}", resources.PEDOMETER.get_max());
+                iprintln!(stim, "Min value: {}", resources.PEDOMETER.get_min());
+                iprintln!(stim, "Threshold is: {}", resources.PEDOMETER.get_threshold());
+                resources.PEDOMETER.reset_samples();
+            } else {
+                resources.PEDOMETER.increment_sample();
             }
-            
-            schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+
+            if *resources.STEPTIMEOUT {
+                if resources.PEDOMETER.detect_step([x_g, y_g, z_g]) {
+                    iprintln!(stim, "Detected a step");
+               
+                    resources.PEDOMETER.add_step();
+                    resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                    *resources.STEPTIMEOUT = false;
+                    schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+               
+                }
+                // if resources.PEDOMETER.is_step(vec_g) {
+                //     resources.PEDOMETER.add_step();
+                //     resources.LCD.set_steps(resources.PEDOMETER.get_steps());
+                //     *resources.STEPTIMEOUT = false;
+                //     schedule.clear_timeout(Instant::now() + (200*MILLISECOND).cycles()).unwrap();
+                // }
+            }
+            resources.BPB5.clear_pending(&mut resources.EXTI);
         }
-        if resources.LIS3DH.get_samples() > lis3dh::TRESHOLDCOUNT {
-            resources.PEDOMETER.calc_max(resources.LIS3DH.axis().x_g(), resources.LIS3DH.axis().y_g(), resources.LIS3DH.axis().z_g());
-            resources.PEDOMETER.calc_threshold();
+        else if resources.BPC7.is_pressed() {
+            let mut n: u32 = 1;
+            if !(resources.COUNTDOWNTIMER.get_isStarted()){
+                resources.COUNTDOWNTIMER.set_isStarted(true);
+                if n == 1{
+                    spawn.start_timer().unwrap();
+                    n += 1;
+                }
+            }
+            else if resources.COUNTDOWNTIMER.get_isStarted(){
+                resources.COUNTDOWNTIMER.pause_timer();
+                schedule.reset_request(Instant::now() + (5*SECOND).cycles()).unwrap();
+            }
+            resources.BPC7.clear_pending(&mut resources.EXTI);
+        //     iprintln!(stim, "Pin 7 I'm high");
+        } 
+        else if resources.BPC8.is_pressed(){
+            if !(resources.COUNTDOWNTIMER.get_isStarted()){
+                resources.COUNTDOWNTIMER.set_timer();
+            }
+            resources.BPC8.clear_pending(&mut resources.EXTI);
+        //     iprintln!(stim, "Pin 8 high");
+        } 
+        // else if resources.BPC9.is_pressed() {            
+        //     iprintln!(stim, "Pin 9 high");
+        //     resources.BPC9.clear_pending(&mut resources.EXTI);
+        // }
+        else if resources.BPC13.is_pressed(){
+            iprintln!(stim, "Pin 13 high");
+
+            if !(resources.COUNTDOWNTIMER.get_isStarted()){
+                resources.COUNTDOWNTIMER.set_timer();
+                iprintln!(stim, "Added 1 to timer!");
+            }
+            resources.BPC13.clear_pending(&mut resources.EXTI);
         }
-        resources.BPB5.clear_pending(&mut resources.EXTI);
-        // resources.BPC7.clear_pending(&mut resources.EXTI);
-        // resources.BPC8.clear_pending(&mut resources.EXTI);
-        // resources.BPC9.clear_pending(&mut resources.EXTI);
     }
     
     #[task(resources = [STEPTIMEOUT])]
@@ -367,26 +541,11 @@ const APP: () = {
         
     //     resources.BPC13.clear_pending(&mut resources.EXTI);
     // }
-
-    #[interrupt(resources = [ITM, EXTI, LCD, COUNTDOWNTIMER], spawn = [start_timer])]
-    fn run_timer(){
-        if /*PC7 interrupt*/ && !(resources.COUNTDOWNTIMER.get_isStarted()){
-            resources.COUNTDOWNTIMER.set_isStarted(true);
-            spawn.start_timer().unwrap();
-        }
-        else if /*PC7  interrupt*/ && resources.COUNTDOWNTIMER.get_isStarted(){
-            resources.COUNTDOWNTIMER.pause_timer();
-        }
-        else if /*PC8 interrupt*/ && !(resources.COUNTDOWNTIMER.get_isStarted()){
-            resources.COUNTDOWNTIMER.set_timer();
-        }
-        else if /*PC9 interrupt*/{
-            resources.COUNTDOWNTIMER.reset_timer();
-        }
-    }
     
     #[task(resources = [ITM, LCD, COUNTDOWNTIMER], schedule = [start_timer])]
     fn start_timer(){
+        resources.LCD.set_countdown(resources.COUNTDOWNTIMER.get_startT());
+
         if resources.COUNTDOWNTIMER.get_startT() > 0{
             schedule.start_timer(Instant::now() + (SECOND).cycles()).unwrap();
             resources.COUNTDOWNTIMER.set_startT(1 as u32);
@@ -397,7 +556,22 @@ const APP: () = {
         }  
     }
 
+    #[task(resources = [BPC7, COUNTDOWNTIMER])]
+    // #[task(resources = [BPB0, COUNTDOWNTIMER])]
+    fn reset_request(){
+        /*Henriks bräda*/
+        if resources.BPC7.is_pressed(){
+            resources.COUNTDOWNTIMER.reset_timer();
+        }
+
+        /*Simons bräda*/
+        // if resources.BPB0.is_pressed(){
+        //     resources.COUNTDOWNTIMER.reset_timer();
+        // }
+    }
+
     extern "C" {
         fn EXTI4();
     }
 };
+

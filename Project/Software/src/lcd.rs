@@ -115,6 +115,14 @@ impl Lcd {
         self.device.set_position(&mut self.spi, 0u8, 2u8);
         self.device.print_bytes(&mut self.spi, steps);
         self.device.print_bytes(&mut self.spi, step_suffix);
+
+        //Time Countdown
+        let mut buffer: [u8; 6] = [0u8; 6];
+        let countdown: &[u8] = self.data.countdown.numtoa(10, &mut buffer); // Base 10.
+        let countdown_suffix: &[u8] = "Time remaining: ".as_bytes();
+        self.device.set_position(&mut self.spi, 0u8, 4u8);
+        self.device.print_bytes(&mut self.spi, countdown_suffix);
+        self.device.print_bytes(&mut self.spi, countdown);
                 
         self.data.new_data = false;
     }
@@ -150,6 +158,18 @@ impl Lcd {
     // Pulses per minute.
     // TODO ...
 
+
+    // Countdown time per second.
+    pub fn set_countdown(&mut self, countdown: u32){
+        self.data.countdown = countdown;
+        self.data.new_data = true;
+    }
+
+    pub fn reset_countdown(&mut self){
+        self.data.countdown = 0;
+        self.data.new_data = true;
+    }
+
     pub fn write_line(&mut self, row: u8, line: &str) {
         self.device.set_position(&mut self.spi, 0u8, row);
         self.device.print(&mut self.spi, line);
@@ -164,6 +184,7 @@ pub struct LcdData {
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
     pulse: u32, // Pulse, beats per minute.
+    countdown: u32, //Time countdown per second.
 }
 
 impl LcdData{
@@ -173,6 +194,7 @@ impl LcdData{
             temp: 0f32,
             step: 0u32,
             pulse: 0u32,
+            countdown: 0u32,
         }
     }
 }
