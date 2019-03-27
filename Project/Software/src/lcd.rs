@@ -200,6 +200,6 @@ impl LcdData{
 }
 
 // HPCB
-implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
