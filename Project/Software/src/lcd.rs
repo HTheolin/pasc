@@ -27,6 +27,10 @@ use ryu;            // Floats to characters.
 
 use embedded_hal::spi;
 use crate::pcd8544::{Pcd8544Spi, Pcd8544};
+use crate::heart::HEART;
+use crate::rip::RIP;
+
+const SENSOR_RATIO: f32 = 1.4;
 
 // Change macro call at bottom of this file to change board.
 //      Simon PCB (SPCB): DC is PC2, SCE is PC0.
@@ -38,6 +42,7 @@ macro_rules! implement_lcd {
             spi: Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>,
             device: Pcd8544Spi<$dc, $sce>,
             rst: $rst,
+            is_drawn: bool,
         }
         
         impl Lcd {
@@ -83,6 +88,7 @@ macro_rules! implement_lcd {
                     spi: spi,
                     device: pcd8544,
                     rst: rst,
+                    is_drawn: false,
                 };
 
                 return lcd;
@@ -92,8 +98,8 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
-    /// Consumes aount 65k cycles, 
-    /// if updated with each max step speed 200ms, 325000 cykles per second
+    /// Consumes aount 85k cycles, 
+    /// if updated with each max step speed 200ms,  cycles per second
     pub fn update(&mut self) {
         // Latest values already displayed.
         if self.data.new_data == false {
@@ -101,6 +107,27 @@ impl Lcd {
         }
         
         self.device.clear(&mut self.spi);
+
+        if self.data.pulse_ratio > SENSOR_RATIO {
+            // Pulse
+            let mut buffer = ryu::Buffer::new();
+            let pulse = buffer.format(self.data.pulse);
+            let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
+            self.device.set_position(&mut self.spi, 0u8, 3u8);
+            self.device.print(&mut self.spi, pulse);
+            self.device.print_bytes(&mut self.spi, pulse_suffix);
+            if !self.is_drawn {
+                self.device.draw_buffer_horizontal(&mut self.spi, &HEART);
+                self.is_drawn = !self.is_drawn;
+            }
+            
+        } else {
+            self.device.draw_buffer_horizontal(&mut self.spi, &RIP);
+            self.data.new_data = false;
+            return;
+        }
+        
+
 
         // Temperature.
         let mut buffer = ryu::Buffer::new();
@@ -125,17 +152,6 @@ impl Lcd {
         self.device.set_position(&mut self.spi, 0u8, 4u8);
         self.device.print_bytes(&mut self.spi, countdown_suffix);
         self.device.print_bytes(&mut self.spi, countdown);
-                
-        // Pulse
-        let mut buffer = ryu::Buffer::new();
-        let pulse = buffer.format(self.data.pulse);
-        let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
-        self.device.set_position(&mut self.spi, 0u8, 3u8);
-        self.device.print(&mut self.spi, pulse);
-        self.device.print_bytes(&mut self.spi, pulse_suffix);
-
-
-
 
         self.data.new_data = false;
     }
@@ -177,6 +193,12 @@ impl Lcd {
         }
     }
 
+    pub fn set_pulse_ratio(&mut self, ratio: f32) {
+         if (ratio != self.data.pulse_ratio) {
+            self.data.pulse_ratio = ratio;    
+            self.data.new_data = true;
+        }
+    }
 
     // Countdown time per second.
     pub fn set_countdown(&mut self, countdown: u32){
@@ -203,6 +225,7 @@ pub struct LcdData {
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
     pulse: f32, // Pulse, beats per minute.
+    pulse_ratio: f32, // Maximum value read sensor
     countdown: u32, //Time countdown per second.
 }
 
@@ -213,12 +236,13 @@ impl LcdData{
             temp: 0f32,
             step: 0u32,
             pulse: 0f32,
+            pulse_ratio: 0f32,
             countdown: 0u32,
         }
     }
 }
 
 // HPCB
-// implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
+implement_lcd!(PC5<Output<PushPull>>, PC4<Output<PushPull>>, PB0<Output<PushPull>>);
 // SPCB
-implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
+// implement_lcd!(PC0<Output<PushPull>>, PC1<Output<PushPull>>, PC2<Output<PushPull>>);
