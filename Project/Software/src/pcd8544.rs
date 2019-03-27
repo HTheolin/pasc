@@ -63,7 +63,10 @@ pub trait Pcd8544 {
 
     fn clear(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.set_position(spi, 0, 0);
-        self.data(spi, &[0u8; 6*84]);
+        self.command(spi, 0x20); // we must send 0x20 before modifying the display control mode
+        self.command(spi, 0x00); // set display control to blank mode
+        self.command(spi, 0x20); // we must send 0x20 before modifying the display control mode
+        self.command(spi, 0x0C); // set display control to normal mode: 0x0D for inverse
         self.set_position(spi, 0, 0);
     }
 }

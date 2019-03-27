@@ -3,7 +3,7 @@ use crate::time;
 pub struct Pulse {
     pub pulse: f32,     // Current pulse, beats per minute.
     pub counts: u8,
-    samples: [u16; 400], // Buffer: last few ADC values. 400 / 32 Hz = 12.5 s.
+    pub samples: [u16; 800], // Buffer: last few ADC values. 400 / 32 Hz = 12.5 s.
     frequency: time::Hertz, // Hz. Samples saved per second.
     pub min: u16,       // Minimum measured recent adc value.
     pub max: u16,       // Maximum measured recent adc value.
@@ -17,19 +17,23 @@ impl Pulse {
         Pulse {
             counts: 0,
             pulse: 50.0,
-            samples: [0; 400],
+            samples: [0; 800],
             frequency: frequency,
             min: 0,
             max: 0,
             ratio: 1.0,
-            th_high: 0.8,
-            th_low: 0.5,
+            th_high: 0.7,
+            th_low: 0.4,
         }
     }
 
     pub fn write_sample(&mut self, sample: u16) {
         self.samples.rotate_left(1);
         self.samples[self.samples.len() - 1] = sample;
+    }
+
+    pub fn read(&self) -> f32 {
+        self.pulse
     }
 
     pub fn update(&mut self) {
@@ -41,7 +45,7 @@ impl Pulse {
 
         if peaks != 0 {
             // Time frame for "samples"
-            let ts: f32 = 1.0 / (self.frequency.0 as f32);
+            let ts: f32 = 1.0 / (2.0 * (self.frequency.0 as f32));
             let t: f32 = (self.samples.len() as f32) * ts;
             
             // Trust previous value more: weights 5/6 and 1/6.
@@ -52,7 +56,7 @@ impl Pulse {
 
     pub fn new_max_min(&mut self) {
         let mut max: u16 = 0;
-        let mut min: u16 = 65535;
+        let mut min: u16 = 4095;
 
         for s in self.samples.iter() {
             if *s >= max {
@@ -75,40 +79,36 @@ impl Pulse {
 
     pub fn count_peaks(&mut self) -> u8 {
         let mut peaks: u8 = 0;
-        let m = self.min;
+        let d = (self.max - self.min) as f32;
         let r = self.ratio;
         let hi = self.th_high;
         let lo = self.th_low;
 
         let mut is_high: bool = false;
 
-        if self.samples[0] as f32 / m as f32 >= hi * r {
+        if ((self.samples[0] - self.min) as f32) / d >= hi {
             is_high = true;
         }
 
         for s in self.samples.iter() {
-            // Current sample as ratio to minimum.
-            // let r_s = (*s as f32) / (m as f32);
+            let r_s = ((*s - self.min) as f32) / d;
             // HYSTERESIS
+            
             is_high = match is_high {
                 true => {               // It was high.
-                    let mut tmp = true;
-                    if (*s as f32) < r * (m as f32) * lo {   // Has it gone low?
-                        tmp = false;    // ... yes.
+                    if r_s < lo {       // Has it gone low?
+                        false   // ... yes.
                     } else {
-                        tmp = true;     // ... no.
+                        true     // ... no.
                     }
-                    tmp
                 },
                 false => {              // It was low.
-                    let mut tmp = false;
-                    if (*s as f32) > r * (m as f32) * hi {   // Has it gone high?
-                        tmp = true;     // ... yes,
+                    if r_s > hi { // Has it gone high?
                         peaks += 1;     // so count this one.
+                        true
                     } else {
-                        tmp = false;    // ... no.
+                        false
                     }
-                    tmp
                 },
             };
         }

@@ -92,12 +92,14 @@ macro_rules! implement_lcd {
 }
 
 impl Lcd {
+    /// Consumes aount 65k cycles, 
+    /// if updated with each max step speed 200ms, 325000 cykles per second
     pub fn update(&mut self) {
         // Latest values already displayed.
         if self.data.new_data == false {
             return;
         }
-
+        
         self.device.clear(&mut self.spi);
 
         // Temperature.
@@ -117,13 +119,24 @@ impl Lcd {
         self.device.print_bytes(&mut self.spi, step_suffix);
 
         //Time Countdown
-        let mut buffer: [u8; 6] = [0u8; 6];
-        let countdown: &[u8] = self.data.countdown.numtoa(10, &mut buffer); // Base 10.
-        let countdown_suffix: &[u8] = "Time remaining: ".as_bytes();
+        let mut buffer = ryu::Buffer::new();
+        let countdown = buffer.format(self.data.countdown);
+        let countdown_suffix: &[u8] = "Sec: ".as_bytes();
         self.device.set_position(&mut self.spi, 0u8, 4u8);
         self.device.print_bytes(&mut self.spi, countdown_suffix);
-        self.device.print_bytes(&mut self.spi, countdown);
+        self.device.print(&mut self.spi, countdown);
                 
+        // Pulse
+        let mut buffer = ryu::Buffer::new();
+        let pulse = buffer.format(self.data.pulse);
+        let pulse_suffix: &[u8] = &[b' ', b'b', b'p', b'm']; // 248 is extended ASCII degree sign.
+        self.device.set_position(&mut self.spi, 0u8, 3u8);
+        self.device.print(&mut self.spi, pulse);
+        self.device.print_bytes(&mut self.spi, pulse_suffix);
+
+
+
+
         self.data.new_data = false;
     }
 
@@ -153,20 +166,26 @@ impl Lcd {
 
     pub fn set_steps(&mut self, steps: u32) {
         self.data.step = steps;
+        self.data.new_data = true;
     }
 
     // Pulses per minute.
-    // TODO ...
+    pub fn set_pulse(&mut self, pulse: f32) {
+        if (pulse != self.data.pulse) {
+            self.data.pulse = pulse;    
+            self.data.new_data = true;
+        }
+    }
 
 
     // Countdown time per second.
     pub fn set_countdown(&mut self, countdown: u32){
-        self.data.countdown = countdown;
+        self.data.countdown = countdown as f32;
         self.data.new_data = true;
     }
 
     pub fn reset_countdown(&mut self){
-        self.data.countdown = 0;
+        self.data.countdown = 0 as f32;
         self.data.new_data = true;
     }
 
@@ -183,8 +202,8 @@ pub struct LcdData {
     // Data.
     temp: f32, // Temperature: Celsius
     step: u32, // Step counter.
-    pulse: u32, // Pulse, beats per minute.
-    countdown: u32, //Time countdown per second.
+    pulse: f32, // Pulse, beats per minute.
+    countdown: f32, //Time countdown per second.
 }
 
 impl LcdData{
@@ -193,8 +212,8 @@ impl LcdData{
             new_data: true,
             temp: 0f32,
             step: 0u32,
-            pulse: 0u32,
-            countdown: 0u32,
+            pulse: 0f32,
+            countdown: 0f32,
         }
     }
 }
