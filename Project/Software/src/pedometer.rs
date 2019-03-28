@@ -22,6 +22,7 @@ pub struct Pedometer {
 /// Pedometer that uses a dynamic threshold algorith to detect steps. 
 /// Units are m/s². 
 /// The period between new threshold updates are set by SAMPLELIMIT
+/// Simpler than step implementation 
 impl Pedometer {
     /// Creates a new instance of a pedometer, set start threshold and min threshold in m/s²
     pub fn new(threshold: f32, min_threshold: f32) -> Self {
@@ -101,7 +102,7 @@ impl Pedometer {
             let v = Y_Offset * axis * SCALE;
             v_sum += v;
         }
-        
+
         let k: usize = 0;
         let v = v_sum / 3.0;
 

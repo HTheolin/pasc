@@ -6,6 +6,9 @@ use hal::gpio::{Alternate, AF5};
 use hal::gpio::gpioa::{PA5, PA7};
 pub use pcd8544_spi::Pcd8544Spi;
 
+const PCD8544_X_PIXELS: usize = 84;
+const PCD8544_Y_PIXELS: usize = 48;
+
 pub trait Pcd8544 {
     fn command(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, cmd: u8);
     fn data(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, data: &[u8]);
@@ -53,7 +56,7 @@ pub trait Pcd8544 {
     // note: data direction is vertical: [1 2 3 4 5 6]
     // 1 3 5
     // 2 4 6
-    fn draw_buffer(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, buffer: &[u8; 6*84]) {
+    fn draw_buffer(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, buffer: &[u8]) {
         self.command(spi, 0x22); // vertical addressing
         self.set_position(spi, 0, 0);
         self.data(spi, buffer);
@@ -61,9 +64,34 @@ pub trait Pcd8544 {
         self.set_position(spi, 0, 0);
     }
 
+    fn draw_buffer_horizontal(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>, buffer: &[u8]) {
+        self.command(spi, 0x20); // horizontal addressing
+        self.set_position(spi, 0, 0);
+        self.data(spi, buffer);
+        self.command(spi, 0x20); // horizontal addressing
+        self.set_position(spi, 0, 0);
+    }
+     
+    fn set_pixel(&mut self, x: usize, y: usize, value: bool, buffer: &mut [u8]) {
+         if x >= PCD8544_X_PIXELS || y >= PCD8544_Y_PIXELS {
+             return;
+         }
+        let bank = y / 8;
+        let bit_mask = 1 << (y % 8);
+        let byte = &mut buffer[(PCD8544_X_PIXELS * bank as usize) + x as usize];
+        if value {
+            *byte |= bit_mask;
+        } else {
+            *byte &= !bit_mask;
+        }
+    }
+
     fn clear(&mut self, spi: &mut Spi<SPI1, (PA5<Alternate<AF5>>, NoMiso, PA7<Alternate<AF5>>)>) {
         self.set_position(spi, 0, 0);
-        self.data(spi, &[0u8; 6*84]);
+        self.command(spi, 0x20); // we must send 0x20 before modifying the display control mode
+        self.command(spi, 0x00); // set display control to blank mode
+        self.command(spi, 0x20); // we must send 0x20 before modifying the display control mode
+        self.command(spi, 0x0C); // set display control to normal mode: 0x0D for inverse
         self.set_position(spi, 0, 0);
     }
 }
