@@ -372,7 +372,7 @@ const APP: () = {
 
     #[task(resources = [TX], spawn = [trace_error])]
     fn echo(byte: u8) {
-        let tx = resources.TX;
+        let mut tx = resources.TX;
 
         if block!(tx.write(byte)).is_err() {
             let _ = spawn.trace_error(Error::UsartSendOverflow);
@@ -380,13 +380,99 @@ const APP: () = {
 
     }
 
-    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo])]
+
+    #[task(resources = [LIS3DH,TX], spawn = [trace_error], schedule = [accecho])]
+    fn accecho() {
+        let mut lis3dh = resources.LIS3DH;
+
+        let mut xbuffer = ryu::Buffer::new();
+        let xstring = xbuffer.format(lis3dh.axis().x_g());        
+        let mut ybuffer = ryu::Buffer::new(); 
+        let ystring = ybuffer.format(lis3dh.axis().y_g()); 
+        let mut zbuffer = ryu::Buffer::new(); 
+        let zstring = zbuffer.format(lis3dh.axis().z_g()); 
+
+        let xb = xstring.as_bytes();
+        let yb = ystring.as_bytes();
+        let zb = zstring.as_bytes();
+
+        let mut j = 0;
+        let mut rxout = [0;23];
+        rxout[j] = 0b01111000;
+        j += 1;
+        rxout [j] = 0b00111010;
+        j += 1;
+        for i in 0..5{
+            rxout [j]= xb[i];
+            j += 1;
+        }
+        rxout [j]= 0b01111001;
+        j += 1;
+        rxout [j] = 0b00111010;
+        j += 1;
+        for i in 0..5{
+        rxout [j]= yb[i];
+        j += 1;
+        }
+        rxout [j]= 0b01111010;
+        j += 1;
+        rxout [j] = 0b00111010;
+        j += 1;
+        for i in 0..5{
+            rxout [j] = zb[i];
+            j += 1;
+        }
+        rxout [j] = 0b01011100;
+        j += 1;
+        rxout [j] = 0b01101110;
+
+        let mut tx = resources.TX;
+        for i in 0..23{
+            if block!(tx.write(rxout[i])).is_err() {
+                let _ = spawn.trace_error(Error::UsartSendOverflow);
+            }
+        }
+        schedule.accecho(Instant::now() + (1*SECOND).cycles()).unwrap();
+
+    }
+
+    #[task(resources = [PULSE, TX], spawn = [trace_error], schedule = [pulseecho])]
+    fn pulseecho(){
+        let pulse = resources.PULSE;
+        let mut pulsebuffer = ryu::Buffer::new();
+        let pulsestring = pulsebuffer.format(pulse.pulse);
+
+        let pulse = pulsestring.as_bytes();
+        let mut rxout = [0;7];
+        for i in 0..5{
+            rxout[i]=pulse[i];
+        }
+        rxout[5] = 0b01011100;
+        rxout[6] = 0b01101110;
+
+        let mut tx = resources.TX;
+        for i in 0..7{
+            if block!(tx.write(rxout[i])).is_err() {
+                let _ = spawn.trace_error(Error::UsartSendOverflow);
+            }
+        }
+        schedule.pulseecho(Instant::now() + (1*SECOND).cycles()).unwrap();
+    }      
+
+    #[interrupt(resources = [RX], spawn = [trace_data, trace_error, echo, pulseecho, accecho])]
     fn USART1() {
         let rx = resources.RX;
-
         match rx.read() {
             Ok(byte) => {
-                let _ = spawn.echo(byte);
+                if byte == b'1' {
+                    let _ = spawn.echo(byte);
+                }
+                if byte == b'2' { 
+                    let _ = spawn.pulseecho();
+                }
+                if byte == b'3' {
+                    let _ = spawn.accecho();
+                }                
                 if spawn.trace_data(byte).is_err() {
                     let _ = spawn.trace_error(Error::RingBufferOverflow);
                 }
