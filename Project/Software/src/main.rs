@@ -398,8 +398,10 @@ const APP: () = {
         let zb = zstring.as_bytes();
 
         let mut j = 0;
-        let mut rxout = [0;18];
+        let mut rxout = [0;23];
         rxout[j] = 0b01111000;
+        j += 1;
+        rxout [j] = 0b00111010;
         j += 1;
         for i in 0..5{
             rxout [j]= xb[i];
@@ -407,19 +409,26 @@ const APP: () = {
         }
         rxout [j]= 0b01111001;
         j += 1;
+        rxout [j] = 0b00111010;
+        j += 1;
         for i in 0..5{
         rxout [j]= yb[i];
         j += 1;
         }
         rxout [j]= 0b01111010;
         j += 1;
+        rxout [j] = 0b00111010;
+        j += 1;
         for i in 0..5{
             rxout [j] = zb[i];
             j += 1;
         }
+        rxout [j] = 0b01011100;
+        j += 1;
+        rxout [j] = 0b01101110;
 
         let mut tx = resources.TX;
-        for i in 0..18{
+        for i in 0..23{
             if block!(tx.write(rxout[i])).is_err() {
                 let _ = spawn.trace_error(Error::UsartSendOverflow);
             }
@@ -435,13 +444,15 @@ const APP: () = {
         let pulsestring = pulsebuffer.format(pulse.pulse);
 
         let pulse = pulsestring.as_bytes();
-        let mut rxout = [0;5];
+        let mut rxout = [0;7];
         for i in 0..5{
             rxout[i]=pulse[i];
         }
+        rxout[5] = 0b01011100;
+        rxout[6] = 0b01101110;
 
         let mut tx = resources.TX;
-        for i in 0..5{
+        for i in 0..7{
             if block!(tx.write(rxout[i])).is_err() {
                 let _ = spawn.trace_error(Error::UsartSendOverflow);
             }
